@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"unicode/utf8"
 )
 
 // RuneInterval code point interval
 type RuneInterval struct {
-	first rune
-	last  rune
+	First rune
+	Last  rune
 }
 
 // UniSet set structure for Unicode code point
@@ -26,6 +27,9 @@ func NewUniSet(runes ...rune) UniSet {
 }
 
 func (u *UniSet) Add(r rune) bool {
+	if !utf8.ValidRune(r) {
+		return false
+	}
 	if u.runes == nil {
 		u.runes = []rune{}
 	}
@@ -42,8 +46,8 @@ func (u *UniSet) Add(r rune) bool {
 }
 
 func (u *UniSet) AddInterval(interval RuneInterval) {
-	first := min(interval.first, interval.last)
-	last := max(interval.first, interval.last)
+	first := min(interval.First, interval.Last)
+	last := max(interval.First, interval.Last)
 	for i := first; i <= last; i++ {
 		u.Add(i)
 	}
@@ -70,8 +74,8 @@ func (u *UniSet) Remove(r rune) bool {
 }
 
 func (u *UniSet) RemoveInterval(interval RuneInterval) {
-	first := min(interval.first, interval.last)
-	last := max(interval.first, interval.last)
+	first := min(interval.First, interval.Last)
+	last := max(interval.First, interval.Last)
 	u.runes = slices.DeleteFunc(u.runes, func(r rune) bool {
 		return r >= first && r <= last
 	})
@@ -89,6 +93,12 @@ func (u *UniSet) RemoveSet(other *UniSet) {
 func (u *UniSet) Find(r rune) bool {
 	_, s := slices.BinarySearch(u.runes, r)
 	return s
+}
+
+func (u *UniSet) Copy() UniSet {
+	copied := UniSet{}
+	copy(copied.runes, u.runes)
+	return copied
 }
 
 func (u *UniSet) Interval(yield func(interval RuneInterval) bool) {
@@ -121,7 +131,7 @@ func (u *UniSet) String() string {
 			sb.WriteRune(',')
 		}
 		c += 1
-		sb.WriteString(fmt.Sprintf("0x%04x..0x%04x", interval.first, interval.last))
+		sb.WriteString(fmt.Sprintf("0x%04x..0x%04x", interval.First, interval.Last))
 	}
 	sb.WriteRune('}')
 	return sb.String()

@@ -61,17 +61,17 @@ func TestBase(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("{0x%04x..0x%04x,0x%04x..0x%04x}", 'a', 'c', 'e', 'f'), set.String())
 	runes := slices.Collect(set.Interval)
 	assert.Equal(t, 2, len(runes))
-	assert.Equal(t, 'a', runes[0].first)
-	assert.Equal(t, 'c', runes[0].last)
-	assert.Equal(t, 'e', runes[1].first)
-	assert.Equal(t, 'f', runes[1].last)
+	assert.Equal(t, 'a', runes[0].First)
+	assert.Equal(t, 'c', runes[0].Last)
+	assert.Equal(t, 'e', runes[1].First)
+	assert.Equal(t, 'f', runes[1].Last)
 
 	assert.True(t, set.Add('d'))
 	assert.Equal(t, fmt.Sprintf("{0x%04x..0x%04x}", 'a', 'f'), set.String())
 	runes = slices.Collect(set.Interval)
 	assert.Equal(t, 1, len(runes))
-	assert.Equal(t, 'a', runes[0].first)
-	assert.Equal(t, 'f', runes[0].last)
+	assert.Equal(t, 'a', runes[0].First)
+	assert.Equal(t, 'f', runes[0].Last)
 
 	set = UniSet{}
 	set.AddInterval(RuneInterval{'a', 'e'})
@@ -97,6 +97,9 @@ func TestBase(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("{0x%04x..0x%04x,0x%04x..0x%04x}", 'b', 'b', 'f', 'f'), set.String())
 	assert.Equal(t, fmt.Sprintf("{0x%04x..0x%04x,0x%04x..0x%04x,0x%04x..0x%04x,0x%04x..0x%04x}",
 		'a', 'a', 'c', 'c', 'e', 'e', 'g', 'g'), other.String())
+
+	set = NewUniSet()
+	assert.False(t, set.Add(-1)) // ignore invalid rune
 }
 
 func TestAdd(t *testing.T) {

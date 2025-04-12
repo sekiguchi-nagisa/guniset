@@ -31,6 +31,5 @@ func NewGUniSetFromDir(unicodeDir string, writer io.Writer, setOperation string)
 }
 
 func (g *GUniSet) Run() error {
-
 	return nil
 }
