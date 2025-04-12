@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"github.com/sekiguchi-nagisa/guniset/op"
+	"github.com/sekiguchi-nagisa/guniset/set"
 	"io"
 	"os"
 	"path"
@@ -30,6 +33,25 @@ func NewGUniSetFromDir(unicodeDir string, writer io.Writer, setOperation string)
 	}, nil
 }
 
-func (g *GUniSet) Run() error {
+func PrintUniSet(uniSet *set.UniSet, writer io.Writer) error {
+	for interval := range uniSet.Interval {
+		_, err := fmt.Fprintf(writer, "{ 0x%04x, 0x%04x },\n", interval.First, interval.Last)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
+}
+
+func (g *GUniSet) Run() error {
+	node, err := op.NewParser().Run([]byte(g.SetOperation))
+	if err != nil {
+		return err
+	}
+	ctx, err := op.NewEvalContext(g.UnicodeData, g.EastAsianWidth)
+	if err != nil {
+		return err
+	}
+	uniSet := node.Eval(ctx)
+	return PrintUniSet(&uniSet, g.Writer)
 }

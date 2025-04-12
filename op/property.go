@@ -76,7 +76,7 @@ const (
 	EAW_H
 )
 
-func EachEastAsianWidth(yield func(width EastAsianWidth) bool) {
+func EachEastAsianWidth(yield func(EastAsianWidth) bool) {
 	for i := EAW_W; i <= EAW_H; i++ {
 		if !yield(i) {
 			break

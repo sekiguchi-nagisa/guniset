@@ -25,7 +25,7 @@ type GeneralCategoryNode struct { // cat:Lu,Lo
 
 func NewGeneralCategoryNode(properties []GeneralCategory) *GeneralCategoryNode {
 	node := GeneralCategoryNode{}
-	copy(node.properties, properties)
+	node.properties = properties[0:]
 	slices.Sort(node.properties)
 	node.properties = slices.Compact(node.properties)
 	return &node
@@ -47,7 +47,7 @@ type EastAsianWidthNode struct { // eaw:W,F
 
 func NewEastAsianWidthNode(properties []EastAsianWidth) *EastAsianWidthNode {
 	node := EastAsianWidthNode{}
-	copy(node.properties, properties)
+	node.properties = properties[0:]
 	slices.Sort(node.properties)
 	node.properties = slices.Compact(node.properties)
 	return &node
