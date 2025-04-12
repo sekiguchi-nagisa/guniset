@@ -35,7 +35,7 @@ func NewGUniSetFromDir(unicodeDir string, writer io.Writer, setOperation string)
 
 func PrintUniSet(uniSet *set.UniSet, writer io.Writer) error {
 	for interval := range uniSet.Interval {
-		_, err := fmt.Fprintf(writer, "{ 0x%04x, 0x%04x },\n", interval.First, interval.Last)
+		_, err := fmt.Fprintf(writer, "{ 0x%04X, 0x%04X },\n", interval.First, interval.Last)
 		if err != nil {
 			return err
 		}
@@ -44,11 +44,11 @@ func PrintUniSet(uniSet *set.UniSet, writer io.Writer) error {
 }
 
 func (g *GUniSet) Run() error {
-	node, err := op.NewParser().Run([]byte(g.SetOperation))
+	ctx, err := op.NewEvalContext(g.UnicodeData, g.EastAsianWidth)
 	if err != nil {
 		return err
 	}
-	ctx, err := op.NewEvalContext(g.UnicodeData, g.EastAsianWidth)
+	node, err := op.NewParser().Run([]byte(g.SetOperation))
 	if err != nil {
 		return err
 	}

@@ -1,13 +1,9 @@
 package op
 
 import (
-	"errors"
 	"fmt"
 	"github.com/sekiguchi-nagisa/guniset/set"
 	"regexp"
-	"strconv"
-	"strings"
-	"unicode/utf8"
 )
 
 //go:generate go run -mod=mod golang.org/x/tools/cmd/stringer -type TokenKind -trimprefix Token -linecomment
@@ -80,8 +76,12 @@ func NewParser() *Parser {
 	return &Parser{}
 }
 
+func syntaxErr(msg string) error {
+	return fmt.Errorf("[syntax error] %s", msg)
+}
+
 func (p *Parser) error(msg string) {
-	p.err = errors.New(msg)
+	p.err = syntaxErr(msg)
 	panic(p.err)
 }
 
@@ -121,7 +121,7 @@ func (p *Parser) expect(kind TokenKind) *Token {
 func (p *Parser) Run(src []byte) (node Node, err error) {
 	tokens, err := Tokenize(src)
 	if err != nil {
-		return nil, err
+		return nil, syntaxErr(err.Error())
 	}
 	p.tokens = tokens
 	p.pos = 0
@@ -153,16 +153,9 @@ func (p *Parser) parsePropertySeq(consumer func(string)) {
 
 func (p *Parser) parseRune() rune {
 	s := p.expect(TokenRune).text
-	if strings.HasPrefix(s, "U+") {
-		s = strings.TrimPrefix(s, "U+")
-	}
-	v, err := strconv.ParseInt(s, 16, 32)
+	r, err := set.ParseRune(s)
 	if err != nil {
-		p.error(fmt.Sprintf("invalid rune: %s", err.Error()))
-	}
-	r := rune(v)
-	if !utf8.ValidRune(r) {
-		p.error(fmt.Sprintf("out of range rune: %04x", r))
+		p.error(err.Error())
 	}
 	return r
 }

@@ -35,7 +35,7 @@ func (g *GeneralCategoryNode) Eval(context *EvalContext) set.UniSet {
 	uniSet := set.NewUniSet()
 	for _, property := range g.properties {
 		if s, ok := context.catSet[property]; ok {
-			uniSet.AddSet(&s)
+			uniSet.AddSet(s)
 		}
 	}
 	return uniSet
@@ -57,7 +57,7 @@ func (e *EastAsianWidthNode) Eval(context *EvalContext) set.UniSet {
 	uniSet := set.NewUniSet()
 	for _, property := range e.properties {
 		if s, ok := context.eawSet[property]; ok {
-			uniSet.AddSet(&s)
+			uniSet.AddSet(s)
 		}
 	}
 	return uniSet

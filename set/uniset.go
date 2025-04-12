@@ -3,6 +3,7 @@ package set
 import (
 	"fmt"
 	"slices"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 )
@@ -11,6 +12,23 @@ import (
 type RuneInterval struct {
 	First rune
 	Last  rune
+}
+
+func IsValidRune(r rune) bool {
+	return 0 <= r && r <= utf8.MaxRune
+}
+
+func ParseRune(s string) (rune, error) {
+	s = strings.TrimPrefix(s, "U+")
+	v, err := strconv.ParseInt(s, 16, 32)
+	if err != nil {
+		return utf8.RuneError, err
+	}
+	r := rune(v)
+	if !IsValidRune(r) {
+		return utf8.RuneError, fmt.Errorf("out of range rune: %04x", r)
+	}
+	return r, nil
 }
 
 // UniSet set structure for Unicode code point
@@ -27,7 +45,7 @@ func NewUniSet(runes ...rune) UniSet {
 }
 
 func (u *UniSet) Add(r rune) bool {
-	if !utf8.ValidRune(r) {
+	if !IsValidRune(r) {
 		return false
 	}
 	if u.runes == nil {
