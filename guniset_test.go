@@ -18,7 +18,7 @@ var gUniSetDir string
 func fetchContent(url string, output string) error {
 	resp, err := http.Get(url)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot fetch %s: %v", url, err)
 	}
 	defer func(Body io.ReadCloser) {
 		_ = Body.Close()
@@ -26,7 +26,7 @@ func fetchContent(url string, output string) error {
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot read body %s: %v", url, err)
 	}
 	file, err := os.Create(output)
 	if err != nil {
@@ -51,6 +51,7 @@ func TestMain(m *testing.M) {
 	rev := "16.0.0"
 	for _, target := range targets {
 		url := fmt.Sprintf("https://www.unicode.org/Public/%s/ucd/%s", rev, target)
+		_, _ = fmt.Fprintf(os.Stdout, "@@ try downloading %s to %s\n", url, outputDir)
 		err = fetchContent(url, path.Join(outputDir, target))
 		if err != nil {
 			log.Fatal(err)
