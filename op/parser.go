@@ -210,18 +210,21 @@ func (p *Parser) parsePrimary() Node {
 
 func (p *Parser) parseUnionOrDiff() Node {
 	left := p.parsePrimary()
-	if p.hasNext() {
+	for p.hasNext() {
 		switch curKind := p.fetch().kind; curKind {
 		case TokenPlus:
 			p.consume()
-			right := p.parseUnionOrDiff()
-			return &UnionNode{left, right}
+			right := p.parsePrimary()
+			left = &UnionNode{left, right}
+			continue
 		case TokenMinus:
 			p.consume()
-			right := p.parseUnionOrDiff()
-			return &DiffNode{left, right}
+			right := p.parsePrimary()
+			left = &DiffNode{left, right}
+			continue
 		default:
 		}
+		break
 	}
 	return left
 }

@@ -108,3 +108,11 @@ func TestParserBinary(t *testing.T) {
 	assert.Equal(t, rune(0xfeff), node.(*DiffNode).right.(*UnionNode).right.(*IntervalNode).interval.First)
 	assert.Equal(t, rune(0xfeff), node.(*DiffNode).right.(*UnionNode).right.(*IntervalNode).interval.Last)
 }
+
+func TestParserBinaryPrecedence(t *testing.T) {
+	node, err := NewParser().Run([]byte("\t \t\n  cat:Mn + 0FeFf - eaw:F"))
+	assert.Nil(t, err)
+	assert.IsType(t, &DiffNode{}, node)
+	assert.IsType(t, &UnionNode{}, node.(*DiffNode).left)
+	assert.IsType(t, &EastAsianWidthNode{}, node.(*DiffNode).right)
+}
