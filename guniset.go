@@ -70,7 +70,7 @@ func (g *GUniSet) Close() error {
 	err1 := g.UnicodeData.Close()
 	err2 := g.EastAsianWidth.Close()
 	if err1 != nil || err2 != nil {
-		errors.Join(err1, err2)
+		return errors.Join(err1, err2)
 	}
 	return nil
 }
