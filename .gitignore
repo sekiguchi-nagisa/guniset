@@ -8,8 +8,7 @@
 *.so
 *.dylib
 guniset
-*.txt
-!test/*/*.txt
+unicode_dir
 
 # Test binary, built with `go test -c`
 *.test

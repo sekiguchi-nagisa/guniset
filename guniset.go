@@ -35,22 +35,13 @@ func NewGUniSetFromDir(unicodeDir string, writer io.Writer, setOperation string)
 }
 
 func PrintUniSet(uniSet *set.UniSet, writer io.Writer) error {
-	count := 0
 	for interval := range uniSet.Interval {
-		if count > 0 {
-			_, err := fmt.Fprint(writer, ",\n")
-			if err != nil {
-				return err
-			}
-		}
-		count++
-		_, err := fmt.Fprintf(writer, "{ 0x%04X, 0x%04X }", interval.First, interval.Last)
+		_, err := fmt.Fprintf(writer, "{ 0x%04X, 0x%04X },\n", interval.First, interval.Last)
 		if err != nil {
 			return err
 		}
 	}
-	_, err := fmt.Fprintln(writer)
-	return err
+	return nil
 }
 
 func (g *GUniSet) Run() error {
