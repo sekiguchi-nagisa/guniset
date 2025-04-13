@@ -17,6 +17,7 @@ const (
 	TokenComma                   // ,
 	TokenLParen                  // (
 	TokenRParen                  // )
+	TokenNegate                  // !
 	TokenPlus                    // +
 	TokenMinus                   // -
 	TokenRange                   // ..
@@ -36,6 +37,7 @@ var lexemes = []Lexeme{
 	{regexp.MustCompile(`^,`), TokenComma},
 	{regexp.MustCompile(`^[(]`), TokenLParen},
 	{regexp.MustCompile(`^[)]`), TokenRParen},
+	{regexp.MustCompile(`^!`), TokenNegate},
 	{regexp.MustCompile(`^[+]`), TokenPlus},
 	{regexp.MustCompile(`^-`), TokenMinus},
 	{regexp.MustCompile(`^[.][.]`), TokenRange},
@@ -208,18 +210,27 @@ func (p *Parser) parsePrimary() Node {
 	return nil
 }
 
+func (p *Parser) parseComplement() Node {
+	if p.fetch().kind == TokenNegate {
+		p.consume()
+		node := p.parseComplement()
+		return &CompNode{node: node}
+	}
+	return p.parsePrimary()
+}
+
 func (p *Parser) parseUnionOrDiff() Node {
-	left := p.parsePrimary()
+	left := p.parseComplement()
 	for p.hasNext() {
 		switch curKind := p.fetch().kind; curKind {
 		case TokenPlus:
 			p.consume()
-			right := p.parsePrimary()
+			right := p.parseComplement()
 			left = &UnionNode{left, right}
 			continue
 		case TokenMinus:
 			p.consume()
-			right := p.parsePrimary()
+			right := p.parseComplement()
 			left = &DiffNode{left, right}
 			continue
 		default:

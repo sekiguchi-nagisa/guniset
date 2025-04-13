@@ -44,6 +44,12 @@ func NewUniSet(runes ...rune) UniSet {
 	return set
 }
 
+func NewUniSetAll() UniSet {
+	set := UniSet{}
+	set.AddInterval(RuneInterval{First: 0, Last: utf8.MaxRune})
+	return set
+}
+
 func (u *UniSet) Add(r rune) bool {
 	if !IsValidRune(r) {
 		return false
@@ -65,7 +71,9 @@ func (u *UniSet) Add(r rune) bool {
 
 func (u *UniSet) AddInterval(interval RuneInterval) {
 	first := min(interval.First, interval.Last)
+	first = max(0, first)
 	last := max(interval.First, interval.Last)
+	last = min(last, utf8.MaxRune)
 	for i := first; i <= last; i++ {
 		u.Add(i)
 	}

@@ -63,16 +63,36 @@ func (e *EastAsianWidthNode) Eval(context *EvalContext) set.UniSet {
 	return uniSet
 }
 
+type CompNode struct { // ! SET
+	node Node
+}
+
+func (c *CompNode) Eval(context *EvalContext) set.UniSet {
+	negate := true
+	node := c.node
+	for target, ok := node.(*CompNode); ok; target, ok = target.node.(*CompNode) {
+		negate = !negate
+		node = target.node
+	}
+	uniSet := node.Eval(context)
+	if negate {
+		tmp := set.NewUniSetAll()
+		tmp.RemoveSet(&uniSet)
+		uniSet = tmp
+	}
+	return uniSet
+}
+
 type UnionNode struct { // SET + SET
 	left  Node
 	right Node
 }
 
 func (u *UnionNode) Eval(context *EvalContext) set.UniSet {
-	leftNode := u.left.Eval(context)
-	rightNode := u.right.Eval(context)
-	leftNode.AddSet(&rightNode)
-	return leftNode
+	leftSet := u.left.Eval(context)
+	rightSet := u.right.Eval(context)
+	leftSet.AddSet(&rightSet)
+	return leftSet
 }
 
 type DiffNode struct { // SET - SET
@@ -81,8 +101,8 @@ type DiffNode struct { // SET - SET
 }
 
 func (d *DiffNode) Eval(context *EvalContext) set.UniSet {
-	leftNode := d.left.Eval(context)
-	rightNode := d.right.Eval(context)
-	leftNode.RemoveSet(&rightNode)
-	return leftNode
+	leftSet := d.left.Eval(context)
+	rightSet := d.right.Eval(context)
+	leftSet.RemoveSet(&rightSet)
+	return leftSet
 }

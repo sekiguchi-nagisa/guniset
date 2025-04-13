@@ -76,6 +76,20 @@ func TestParserPrimary(t *testing.T) {
 	assert.Equal(t, EAW_N, node.(*EastAsianWidthNode).properties[2])
 }
 
+func TestParserNegate(t *testing.T) {
+	node, err := NewParser().Run([]byte("\t \t\n  ! cat:Zs + 0FeFf  "))
+	assert.Nil(t, err)
+	assert.IsType(t, &UnionNode{}, node)
+	assert.IsType(t, &CompNode{}, node.(*UnionNode).left)
+	assert.IsType(t, &GeneralCategoryNode{}, node.(*UnionNode).left.(*CompNode).node)
+	assert.Equal(t, 1, len(node.(*UnionNode).left.(*CompNode).node.(*GeneralCategoryNode).properties))
+	assert.Equal(t, CAT_Zs, node.(*UnionNode).left.(*CompNode).
+		node.(*GeneralCategoryNode).properties[0])
+	assert.IsType(t, &IntervalNode{}, node.(*UnionNode).right)
+	assert.Equal(t, rune(0xFEFF), node.(*UnionNode).right.(*IntervalNode).interval.First)
+	assert.Equal(t, rune(0xFEFF), node.(*UnionNode).right.(*IntervalNode).interval.Last)
+}
+
 func TestParserBinary(t *testing.T) {
 	node, err := NewParser().Run([]byte("\t \t\n  cat:Zs + 0FeFf  "))
 	assert.Nil(t, err)

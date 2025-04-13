@@ -14,15 +14,16 @@ func _() {
 	_ = x[TokenComma-3]
 	_ = x[TokenLParen-4]
 	_ = x[TokenRParen-5]
-	_ = x[TokenPlus-6]
-	_ = x[TokenMinus-7]
-	_ = x[TokenRange-8]
-	_ = x[TokenSpace-9]
+	_ = x[TokenNegate-6]
+	_ = x[TokenPlus-7]
+	_ = x[TokenMinus-8]
+	_ = x[TokenRange-9]
+	_ = x[TokenSpace-10]
 }
 
-const _TokenKind_name = "identifiercodePoint:,()+-..space"
+const _TokenKind_name = "identifiercodePoint:,()!+-..space"
 
-var _TokenKind_index = [...]uint8{0, 10, 19, 20, 21, 22, 23, 24, 25, 27, 32}
+var _TokenKind_index = [...]uint8{0, 10, 19, 20, 21, 22, 23, 24, 25, 26, 28, 33}
 
 func (i TokenKind) String() string {
 	if i < 0 || i >= TokenKind(len(_TokenKind_index)-1) {
