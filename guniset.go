@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"github.com/sekiguchi-nagisa/guniset/op"
 	"github.com/sekiguchi-nagisa/guniset/set"
@@ -10,9 +11,9 @@ import (
 )
 
 type GUniSet struct {
-	UnicodeData    io.Reader // UnicodeData.txt
-	EastAsianWidth io.Reader // EastAsianWidth.txt
-	Writer         io.Writer // for generated Unicode set string
+	UnicodeData    io.ReadCloser // UnicodeData.txt
+	EastAsianWidth io.ReadCloser // EastAsianWidth.txt
+	Writer         io.Writer     // for generated Unicode set string
 	SetOperation   string
 }
 
@@ -63,4 +64,13 @@ func (g *GUniSet) Run() error {
 	}
 	uniSet := node.Eval(ctx)
 	return PrintUniSet(&uniSet, g.Writer)
+}
+
+func (g *GUniSet) Close() error {
+	err1 := g.UnicodeData.Close()
+	err2 := g.EastAsianWidth.Close()
+	if err1 != nil || err2 != nil {
+		errors.Join(err1, err2)
+	}
+	return nil
 }

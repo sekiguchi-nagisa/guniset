@@ -9,6 +9,7 @@
 *.dylib
 guniset
 *.txt
+!test/*/*.txt
 
 # Test binary, built with `go test -c`
 *.test

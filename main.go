@@ -59,6 +59,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer func(g *GUniSet) {
+		_ = g.Close()
+	}(g)
 	err = g.Run()
 	if err != nil {
 		log.Fatal(err)
