@@ -1,0 +1,49 @@
+#!/usr/bin/env arsh
+
+# generate golden files for general category
+
+var REV="16.0.0"
+
+let output_dir = $1.realpath()
+
+test -f DerivedGeneralCategory.txt ||
+  curl "https://www.unicode.org/Public/$REV/ucd/extracted/DerivedGeneralCategory.txt" \
+    > ./DerivedGeneralCategory.txt
+
+var cates = [
+  'Lu', 'Ll', 'Lt', 'Lm', 'Lo',
+  'Mn', 'Mc', 'Me',
+  'Nd', 'Nl', 'No',
+  'Pc', 'Pd', 'Ps', 'Pe', 'Pi', 'Pf', 'Po',
+  'Sm', 'Sc', 'Sk', 'So', 'Zs', 'Zl', 'Zp',
+  'Cc', 'Cf', 'Cs', 'Co', 'Cn',
+]
+
+var cate_map : [String: [String]]
+for cate in $cates {
+  $cate_map[$cate] = new [String]()
+}
+
+var count =0 
+for line in <(cat ./DerivedGeneralCategory.txt) {
+  $count++
+  ($line.empty() || $line.startsWith('#')) && continue
+  var matched = $/^(?<first>[0-9A-F]+)(\.\.(?<last>[0-9A-F]+))?[ ]*;[ ]+(?<cat>[A-Z][a-z]) #.+$/.match($line) ?? {echo failed at $line: $line; exit 1;}
+  var first = $matched.named('first')!
+  var last =  $matched.named('last') ?? $first
+  var r = "{ 0x$first, 0x$last },"
+  $cate_map[$matched.named('cat')!].add($r)
+}
+
+# check cate
+for _, values in $cate_map {
+  assert ! $values.empty()
+}
+
+# output
+for cate, values in $cate_map {
+  for v in $values {
+    echo $v
+  } with > $output_dir/cat_${$cate.lower()}.golden
+  echo "cat:$cate" > $output_dir/cat_${$cate.lower()}.test
+}

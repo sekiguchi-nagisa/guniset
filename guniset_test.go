@@ -73,9 +73,12 @@ func TestRun(t *testing.T) {
 		t.Fatal(err)
 	}
 	targetDir := path.Join(wd, "test", "unicode16")
-	cases, err := filepath.Glob(path.Join(targetDir, "*_test.txt"))
+	cases, err := filepath.Glob(path.Join(targetDir, "*.test"))
 	if err != nil {
 		t.Fatal(err)
+	}
+	if cases == nil || len(cases) == 0 {
+		t.Fatalf("no test cases found in %s", targetDir)
 	}
 
 	for _, c := range cases {
@@ -84,7 +87,7 @@ func TestRun(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			expectFile := strings.TrimSuffix(c, "_test.txt") + "_golden.txt"
+			expectFile := strings.TrimSuffix(c, ".test") + ".golden"
 			expectData, err := os.ReadFile(expectFile)
 			if err != nil {
 				t.Fatal(err)
