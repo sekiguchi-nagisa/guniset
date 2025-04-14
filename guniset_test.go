@@ -47,12 +47,12 @@ func TestMain(m *testing.M) {
 	}(outputDir)
 	gUniSetDir = outputDir
 
-	targets := []string{"UnicodeData.txt", "EastAsianWidth.txt"}
+	targets := []string{"extracted/DerivedGeneralCategory.txt", "EastAsianWidth.txt"}
 	rev := "16.0.0"
 	for _, target := range targets {
 		url := fmt.Sprintf("https://www.unicode.org/Public/%s/ucd/%s", rev, target)
 		_, _ = fmt.Fprintf(os.Stdout, "@@ try downloading %s to %s\n", url, outputDir)
-		err = fetchContent(url, path.Join(outputDir, target))
+		err = fetchContent(url, path.Join(outputDir, path.Base(target)))
 		if err != nil {
 			log.Fatal(err)
 		}

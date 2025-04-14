@@ -11,14 +11,14 @@ import (
 )
 
 type GUniSet struct {
-	UnicodeData    io.ReadCloser // UnicodeData.txt
-	EastAsianWidth io.ReadCloser // EastAsianWidth.txt
-	Writer         io.Writer     // for generated Unicode set string
-	SetOperation   string
+	GeneralCategory io.ReadCloser // DerivedGeneralCategory.txt
+	EastAsianWidth  io.ReadCloser // EastAsianWidth.txt
+	Writer          io.Writer     // for generated Unicode set string
+	SetOperation    string
 }
 
 func NewGUniSetFromDir(unicodeDir string, writer io.Writer, setOperation string) (*GUniSet, error) {
-	unicodeData, err := os.Open(path.Join(unicodeDir, "UnicodeData.txt"))
+	generalCategory, err := os.Open(path.Join(unicodeDir, "DerivedGeneralCategory.txt"))
 	if err != nil {
 		return nil, err
 	}
@@ -27,10 +27,10 @@ func NewGUniSetFromDir(unicodeDir string, writer io.Writer, setOperation string)
 		return nil, err
 	}
 	return &GUniSet{
-		UnicodeData:    unicodeData,
-		EastAsianWidth: eastAsianWidth,
-		Writer:         writer,
-		SetOperation:   setOperation,
+		GeneralCategory: generalCategory,
+		EastAsianWidth:  eastAsianWidth,
+		Writer:          writer,
+		SetOperation:    setOperation,
 	}, nil
 }
 
@@ -45,7 +45,7 @@ func PrintUniSet(uniSet *set.UniSet, writer io.Writer) error {
 }
 
 func (g *GUniSet) Run() error {
-	ctx, err := op.NewEvalContext(g.UnicodeData, g.EastAsianWidth)
+	ctx, err := op.NewEvalContext(g.GeneralCategory, g.EastAsianWidth)
 	if err != nil {
 		return err
 	}
@@ -58,7 +58,7 @@ func (g *GUniSet) Run() error {
 }
 
 func (g *GUniSet) Close() error {
-	err1 := g.UnicodeData.Close()
+	err1 := g.GeneralCategory.Close()
 	err2 := g.EastAsianWidth.Close()
 	if err1 != nil || err2 != nil {
 		return errors.Join(err1, err2)

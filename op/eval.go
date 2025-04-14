@@ -58,56 +58,43 @@ func (lr *LineReader) formatErr(e error) error {
 	return fmt.Errorf("%s:%d: [load error] %s", lr.name, lr.lineno, e.Error())
 }
 
-func extractCategory(line string) (rune, GeneralCategory, string, error) {
-	ss := strings.Split(line, ";")
-	desc := ss[1]
-	r, err := set.ParseRune(ss[0])
-	if err != nil {
-		return r, 0, desc, err
-	}
-	cate, err := ParseGeneralCategory(ss[2])
-	if err != nil {
-		return r, 0, desc, err
-	}
-	return r, cate, desc, nil
-}
-
 func LoadGeneralCategoryMap(reader io.Reader) (map[GeneralCategory]*set.UniSet, error) {
 	ret := map[GeneralCategory]*set.UniSet{}
 	for cate := range EachGeneralCategory {
 		ret[cate] = &set.UniSet{}
 	}
-	lr := NewLineReader("UnicodeData.txt", reader)
+	lr := NewLineReader("DerivedGeneralCategory.txt", reader)
 	for lr.next() {
 		line := lr.line()
-		r, cate, desc, err := extractCategory(line)
+		if strings.HasPrefix(line, "#") || line == "" {
+			continue
+		}
+
+		// extract interval
+		ss := strings.Split(line, ";")
+		cc := strings.Split(strings.TrimSpace(ss[0]), "..")
+		first, err := set.ParseRune(cc[0])
 		if err != nil {
 			return nil, lr.formatErr(err)
 		}
-		if strings.HasSuffix(desc, "First>") {
-			lr.next()
-			line2 := lr.line()
-			r2, cate2, desc2, err := extractCategory(line2)
+		last := first
+		if len(cc) == 2 {
+			last, err = set.ParseRune(cc[1])
 			if err != nil {
 				return nil, lr.formatErr(err)
 			}
-			if strings.HasSuffix(desc2, "Last>") &&
-				strings.TrimSuffix(desc, "First>") == strings.TrimSuffix(desc2, "Last>") &&
-				cate == cate2 {
-				ret[cate].AddInterval(set.RuneInterval{
-					First: r,
-					Last:  r2,
-				})
-				continue
-			} else {
-				return nil, lr.formatErr(
-					fmt.Errorf("broken interval\nFirst: %s\nLast: %s", line, line2))
-			}
 		}
-		if !ret[cate].Add(r) {
-			return nil, lr.formatErr(
-				fmt.Errorf("rune %04x already found in %s", r, cate.String()))
+
+		// extract EAW
+		v := strings.TrimSpace(strings.Split(strings.TrimSpace(ss[1]), "#")[0])
+		cate, err := ParseGeneralCategory(v)
+		if err != nil {
+			return nil, lr.formatErr(err)
 		}
+		ret[cate].AddInterval(set.RuneInterval{
+			First: first,
+			Last:  last,
+		})
 	}
 	err := lr.err()
 	if err != nil {
