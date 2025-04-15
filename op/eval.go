@@ -28,6 +28,21 @@ func NewEvalContext(unicodeData io.Reader, eastAsianWidth io.Reader) (*EvalConte
 	}, nil
 }
 
+func (e *EvalContext) FillEawN() *set.UniSet {
+	eawSet := e.eawSet[EAW_N]
+	if eawSet != nil {
+		return eawSet
+	}
+	tmpSet := set.NewUniSetAll()
+	for eaw := range EachEastAsianWidth {
+		if eaw != EAW_N {
+			tmpSet.RemoveSet(e.eawSet[eaw])
+		}
+	}
+	e.eawSet[EAW_N] = &tmpSet
+	return e.eawSet[EAW_N]
+}
+
 type LineReader struct {
 	name    string
 	scanner *bufio.Scanner
@@ -106,6 +121,9 @@ func LoadGeneralCategoryMap(reader io.Reader) (map[GeneralCategory]*set.UniSet, 
 func LoadEastAsianWidthMap(reader io.Reader) (map[EastAsianWidth]*set.UniSet, error) {
 	ret := map[EastAsianWidth]*set.UniSet{}
 	for eaw := range EachEastAsianWidth {
+		if eaw == EAW_N {
+			continue // fill N later
+		}
 		ret[eaw] = &set.UniSet{}
 	}
 	lr := NewLineReader("EastAsianWidth.txt", reader)
@@ -135,6 +153,9 @@ func LoadEastAsianWidthMap(reader io.Reader) (map[EastAsianWidth]*set.UniSet, er
 		eaw, err := ParseEastAsianWidth(v)
 		if err != nil {
 			return nil, lr.formatErr(err)
+		}
+		if eaw == EAW_N {
+			continue // fill N later
 		}
 		ret[eaw].AddInterval(set.RuneInterval{
 			First: first,

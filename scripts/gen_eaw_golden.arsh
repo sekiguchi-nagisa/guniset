@@ -1,0 +1,87 @@
+#!/usr/bin/env arsh
+
+# generate golden files for east asian width (except for 'N')
+
+var REV="16.0.0"
+
+let output_dir = $1.realpath()
+
+test -f EastAsianWidth.txt ||
+  curl "https://www.unicode.org/Public/$REV/ucd/EastAsianWidth.txt" \
+    > ./EastAsianWidth.txt
+
+var eaws = [
+'F', 'W', 'H', 'A', 'Na' # exclude 'N'
+]
+
+type Interval {
+  let first: String
+  let last: String
+  let firstN: Int
+  let lastN: Int
+}
+
+function try_merge(o : Interval) : Interval? for Interval {
+    if $this.lastN + 1 == $o.firstN {
+        # merge range
+        return new Interval(
+            $this.first,
+            $o.last,
+            $this.firstN,
+            $o.lastN
+        )
+    }
+    return $none
+}
+
+var eaw_map : [String: [Interval]]
+for eaw in $eaws {
+  $eaw_map[$eaw] = new [Interval]()
+}
+
+var count =0 
+for line in <(cat ./EastAsianWidth.txt) {
+  $count++
+  ($line.empty() || $line.startsWith('#')) && continue
+  var matched = $/^(?<first>[0-9A-F]+)(\.\.(?<last>[0-9A-F]+))?[ ]*;[ ]+(?<eaw>(F|W|H|A|N|Na)) +#.+$/.match($line) ?? {echo failed at $count: $line; exit 1;}
+  var first = $matched.named('first')!
+  var last =  $matched.named('last') ?? $first
+  var firstN = $first.toInt(16)!
+  var lastN = $last.toInt(16)!
+  # var r = "{ 0x$first, 0x$last },"
+  var eaw = $matched.named('eaw')!
+  $eaw == 'N' && continue  # not emit N
+  $eaw_map[$eaw].add(new Interval($first, $last, $firstN, $lastN))
+}
+
+# check cate
+for _, values in $eaw_map {
+  assert ! $values.empty()
+}
+
+# merge
+for eaw in $eaws {
+  var new_values: [Interval]
+  var old_values = $eaw_map[$eaw]
+  for value in $old_values {
+    if $new_values.empty() {
+      $new_values.add($value)
+      continue
+    }
+    if let v = $new_values.peek().try_merge($value) {
+      $new_values.pop()
+      $new_values.push($v)
+      continue
+    }
+    $new_values.add($value)
+  }
+  $eaw_map[$eaw] = $new_values
+}
+
+# output
+for eaw, values in $eaw_map {
+  for v in $values {
+    echo "{ 0x${v.first}, 0x${v.last} },"
+  } with > $output_dir/eaw_${$eaw.lower()}.golden
+  echo "eaw:$eaw" > $output_dir/eaw_${$eaw.lower()}.test
+}

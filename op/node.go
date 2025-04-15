@@ -58,6 +58,8 @@ func (e *EastAsianWidthNode) Eval(context *EvalContext) set.UniSet {
 	for _, property := range e.properties {
 		if s, ok := context.eawSet[property]; ok {
 			uniSet.AddSet(s)
+		} else if property == EAW_N {
+			uniSet.AddSet(context.FillEawN())
 		}
 	}
 	return uniSet
