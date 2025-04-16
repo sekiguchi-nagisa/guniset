@@ -1,0 +1,37 @@
+#!/usr/bin/env arsh
+
+# build binary for all supported platform
+
+cd $SCRIPT_DIR/../    # move to project top
+
+assert (command -v go &>> /dev/null) : "command not found: go"
+assert (command -v git &>> /dev/null) : "command not found: git"
+
+var version = "$(git describe --tags)"
+$version = $version.empty() ? "0.0.0" : $version.split("-")[0]
+if $version.startsWith('v') {
+    $version = $version.slice(1)
+}
+assert $version =~ $/^[0-9]+\.[0-9]+\.[0-9]+.*$/ : "wrong version number: $version"
+echo detect version: $version
+
+var build_matrix = [
+    ('linux', 'x86_64', '', 'amd64', 'x86_64-linux-musl'),
+    ('linux', 'aarch64', '', 'arm64', 'aarch64-linux-musl'),
+    ('darwin', 'x86_64', '', 'amd64', ''),  # FIXME: build-triple
+    ('darwin', 'aarch64', '', 'arm64', ''), # FIXME: build-triple
+    ('windows', 'x86_64', '.exe', 'amd64', ''), # FIXME: build-triple
+]
+
+shctl set errraise
+for conf in $build_matrix {
+  var bin = "${$PWD.basename()}-$version-${conf._0}-${conf._1}${conf._2}"
+  echo build for $bin
+#  CGO_ENABLED=1 CC="zig cc -target ${conf._4}" \
+    GOOS=${conf._0} GOARCH=${conf._3} \
+    GOTOOLCHAIN=auto go build -ldflags "-s -w -X main.version=v$version" -trimpath -o $bin
+}
+
+# check binary version
+assert "v$version" == "$(call ./"${$PWD.basename()}-$version-$OSTYPE-$MACHTYPE" -v)".split(" ")[0]
+call ./"${$PWD.basename()}-$version-$OSTYPE-$MACHTYPE" -v
