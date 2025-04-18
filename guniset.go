@@ -10,6 +10,20 @@ import (
 	"path"
 )
 
+type SetFilterOp int8
+
+const (
+	SetPrintAll SetFilterOp = iota
+	SetPrintBMP
+	SetPrintNonBMP
+)
+
+var StrToSetPrintOps = map[string]SetFilterOp{
+	"all":     SetPrintAll,
+	"bmp":     SetPrintBMP,
+	"non-bmp": SetPrintNonBMP,
+}
+
 type GUniSet struct {
 	GeneralCategory io.ReadCloser // DerivedGeneralCategory.txt
 	EastAsianWidth  io.ReadCloser // EastAsianWidth.txt
@@ -44,7 +58,7 @@ func PrintUniSet(uniSet *set.UniSet, writer io.Writer) error {
 	return nil
 }
 
-func (g *GUniSet) Run() error {
+func (g *GUniSet) Run(filterOp SetFilterOp) error {
 	ctx, err := op.NewEvalContext(g.GeneralCategory, g.EastAsianWidth)
 	if err != nil {
 		return err
@@ -54,6 +68,17 @@ func (g *GUniSet) Run() error {
 		return err
 	}
 	uniSet := node.Eval(ctx)
+	switch filterOp {
+	case SetPrintAll: // do nothing
+	case SetPrintBMP:
+		uniSet.RemoveFunc(func(r rune) bool { // only allow bmp rune (remove non-bmp)
+			return !set.IsBmpRune(r)
+		})
+	case SetPrintNonBMP:
+		uniSet.RemoveFunc(func(r rune) bool { // only allow non-bmp rune (remove bmp)
+			return !set.IsSupplementaryRune(r)
+		})
+	}
 	return PrintUniSet(&uniSet, g.Writer)
 }
 

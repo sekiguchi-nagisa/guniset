@@ -18,6 +18,14 @@ func IsValidRune(r rune) bool {
 	return 0 <= r && r <= utf8.MaxRune
 }
 
+func IsBmpRune(r rune) bool {
+	return 0 <= r && r <= 0xFFFF
+}
+
+func IsSupplementaryRune(r rune) bool {
+	return r > 0xFFFF
+}
+
 func ParseRune(s string) (rune, error) {
 	s = strings.TrimPrefix(s, "U+")
 	v, err := strconv.ParseInt(s, 16, 32)
@@ -114,6 +122,10 @@ func (u *UniSet) RemoveSet(other *UniSet) {
 	u.runes = slices.DeleteFunc(u.runes, func(r rune) bool {
 		return other.Find(r)
 	})
+}
+
+func (u *UniSet) RemoveFunc(f func(r rune) bool) {
+	u.runes = slices.DeleteFunc(u.runes, f)
 }
 
 func (u *UniSet) Find(r rune) bool {

@@ -13,6 +13,7 @@ var CLI struct {
 	Version kong.VersionFlag `short:"v" help:"Show version information"`
 	Output  string           `short:"o" help:"Set output file (default stdout)"`
 	Set     string           `arg:"" required:"" help:"Specify set operation"`
+	Filter  string           `optional:"" help:"Filter output (all: include all, bmp: only bmp, non-bmp: exclude bmp)" enum:"all,,bmp,non-bmp" default:"all"`
 }
 
 var version = "" // for version embedding (specified like "-X main.version=v0.1.0")
@@ -43,7 +44,8 @@ func main() {
 	if gunisetDir == "" {
 		dir, err := os.Getwd()
 		if err != nil {
-			log.Fatalf("cannot get current directory: %v", err)
+			_, _ = fmt.Fprintf(os.Stderr, "cannot get current directory: %v", err)
+			os.Exit(1)
 		}
 		gunisetDir = dir
 	}
@@ -51,7 +53,8 @@ func main() {
 	if CLI.Output != "" {
 		w, err := os.Create(CLI.Output)
 		if err != nil {
-			log.Fatalf("cannot open output file: %v", err)
+			_, _ = fmt.Fprintf(os.Stderr, "cannot open output file: %v", err)
+			os.Exit(1)
 		}
 		writer = w
 	}
@@ -62,7 +65,12 @@ func main() {
 	defer func(g *GUniSet) {
 		_ = g.Close()
 	}(g)
-	err = g.Run()
+	printOp, ok := StrToSetPrintOps[CLI.Filter]
+	if !ok {
+		_, _ = fmt.Fprintf(os.Stderr, "unknown filter %q", CLI.Filter)
+		os.Exit(1)
+	}
+	err = g.Run(printOp)
 	if err != nil {
 		log.Fatal(err)
 	}
