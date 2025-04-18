@@ -8,7 +8,7 @@ Unicode set extraction tool written in Go. It is heavily inspired by
 
 ## Usage
 ```sh
-GUNISET_DIR=./unicode_date guniset <set operation>
+GUNISET_DIR=./unicode_data guniset <set operation>
 ```
 
 The ``GUNISET_DIR`` environmental variable must indicate a directory 
