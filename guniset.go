@@ -71,12 +71,12 @@ func (g *GUniSet) Run(filterOp SetFilterOp) error {
 	switch filterOp {
 	case SetPrintAll: // do nothing
 	case SetPrintBMP:
-		uniSet.RemoveFunc(func(r rune) bool { // only allow bmp rune (remove non-bmp)
-			return !set.IsBmpRune(r)
+		uniSet.Filter(func(r rune) bool { // only allow bmp rune (remove non-bmp)
+			return set.IsBmpRune(r)
 		})
 	case SetPrintNonBMP:
-		uniSet.RemoveFunc(func(r rune) bool { // only allow non-bmp rune (remove bmp)
-			return !set.IsSupplementaryRune(r)
+		uniSet.Filter(func(r rune) bool { // only allow non-bmp rune (remove bmp)
+			return set.IsSupplementaryRune(r)
 		})
 	}
 	return PrintUniSet(&uniSet, g.Writer)

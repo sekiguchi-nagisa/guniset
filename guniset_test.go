@@ -67,12 +67,12 @@ func TestMain(m *testing.M) {
 	os.Exit(exitCode)
 }
 
-func TestRun(t *testing.T) {
+func runGoldenTest(t *testing.T, baseName string, filterOp SetFilterOp) {
 	wd, err := os.Getwd()
 	if err != nil {
 		t.Fatal(err)
 	}
-	targetDir := path.Join(wd, "test", "unicode16")
+	targetDir := path.Join(wd, "test", baseName)
 	cases, err := filepath.Glob(path.Join(targetDir, "*.test"))
 	if err != nil {
 		t.Fatal(err)
@@ -81,8 +81,10 @@ func TestRun(t *testing.T) {
 		t.Fatalf("no test cases found in %s", targetDir)
 	}
 
+	t.Parallel()
 	for _, c := range cases {
 		t.Run(c, func(t *testing.T) {
+			t.Parallel()
 			testData, err := os.ReadFile(c)
 			if err != nil {
 				t.Fatal(err)
@@ -101,7 +103,7 @@ func TestRun(t *testing.T) {
 			defer func(g *GUniSet) {
 				_ = g.Close()
 			}(g)
-			err = g.Run()
+			err = g.Run(filterOp)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -111,4 +113,16 @@ func TestRun(t *testing.T) {
 				strings.TrimSpace(actualWriter.String()), "See "+expectFile)
 		})
 	}
+}
+
+func TestPrintAll(t *testing.T) {
+	runGoldenTest(t, "unicode16", SetPrintAll)
+}
+
+func TestPrintBMP(t *testing.T) {
+	runGoldenTest(t, "unicode16_bmp", SetPrintBMP)
+}
+
+func TestPrintNonBMP(t *testing.T) {
+	runGoldenTest(t, "unicode16_nonbmp", SetPrintNonBMP)
 }

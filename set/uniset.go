@@ -124,8 +124,10 @@ func (u *UniSet) RemoveSet(other *UniSet) {
 	})
 }
 
-func (u *UniSet) RemoveFunc(f func(r rune) bool) {
-	u.runes = slices.DeleteFunc(u.runes, f)
+func (u *UniSet) Filter(f func(r rune) bool) {
+	u.runes = slices.DeleteFunc(u.runes, func(r rune) bool {
+		return !f(r)
+	})
 }
 
 func (u *UniSet) Find(r rune) bool {
