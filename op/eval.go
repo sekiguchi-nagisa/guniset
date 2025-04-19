@@ -34,11 +34,14 @@ func (e *EvalContext) FillEawN() *set.UniSet {
 		return eawSet
 	}
 	tmpSet := set.NewUniSetAll()
+	builder := set.UniSetBuilder{}
 	for eaw := range EachEastAsianWidth {
 		if eaw != EAW_N {
-			tmpSet.RemoveSet(e.eawSet[eaw])
+			builder.AddSet(e.eawSet[eaw])
 		}
 	}
+	removing := builder.Build()
+	tmpSet.RemoveSet(&removing)
 	e.eawSet[EAW_N] = &tmpSet
 	return e.eawSet[EAW_N]
 }
@@ -74,9 +77,9 @@ func (lr *LineReader) formatErr(e error) error {
 }
 
 func LoadGeneralCategoryMap(reader io.Reader) (map[GeneralCategory]*set.UniSet, error) {
-	ret := map[GeneralCategory]*set.UniSet{}
+	builderMap := map[GeneralCategory]*set.UniSetBuilder{}
 	for cate := range EachGeneralCategory {
-		ret[cate] = &set.UniSet{}
+		builderMap[cate] = &set.UniSetBuilder{}
 	}
 	lr := NewLineReader("DerivedGeneralCategory.txt", reader)
 	for lr.next() {
@@ -106,7 +109,7 @@ func LoadGeneralCategoryMap(reader io.Reader) (map[GeneralCategory]*set.UniSet, 
 		if err != nil {
 			return nil, lr.formatErr(err)
 		}
-		ret[cate].AddInterval(set.RuneInterval{
+		builderMap[cate].AddInterval(set.RuneInterval{
 			First: first,
 			Last:  last,
 		})
@@ -115,16 +118,23 @@ func LoadGeneralCategoryMap(reader io.Reader) (map[GeneralCategory]*set.UniSet, 
 	if err != nil {
 		return nil, lr.formatErr(err)
 	}
+
+	// build
+	ret := map[GeneralCategory]*set.UniSet{}
+	for cate, builder := range builderMap {
+		tmp := builder.Build()
+		ret[cate] = &tmp
+	}
 	return ret, nil
 }
 
 func LoadEastAsianWidthMap(reader io.Reader) (map[EastAsianWidth]*set.UniSet, error) {
-	ret := map[EastAsianWidth]*set.UniSet{}
+	builderMap := map[EastAsianWidth]*set.UniSetBuilder{}
 	for eaw := range EachEastAsianWidth {
 		if eaw == EAW_N {
 			continue // fill N later
 		}
-		ret[eaw] = &set.UniSet{}
+		builderMap[eaw] = &set.UniSetBuilder{}
 	}
 	lr := NewLineReader("EastAsianWidth.txt", reader)
 	for lr.next() {
@@ -157,7 +167,7 @@ func LoadEastAsianWidthMap(reader io.Reader) (map[EastAsianWidth]*set.UniSet, er
 		if eaw == EAW_N {
 			continue // fill N later
 		}
-		ret[eaw].AddInterval(set.RuneInterval{
+		builderMap[eaw].AddInterval(set.RuneInterval{
 			First: first,
 			Last:  last,
 		})
@@ -165,6 +175,13 @@ func LoadEastAsianWidthMap(reader io.Reader) (map[EastAsianWidth]*set.UniSet, er
 	err := lr.err()
 	if err != nil {
 		return nil, lr.formatErr(err)
+	}
+
+	// build
+	ret := map[EastAsianWidth]*set.UniSet{}
+	for cate, builder := range builderMap {
+		tmp := builder.Build()
+		ret[cate] = &tmp
 	}
 	return ret, nil
 }

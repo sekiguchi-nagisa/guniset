@@ -52,10 +52,51 @@ func NewUniSet(runes ...rune) UniSet {
 	return set
 }
 
+type UniSetBuilder struct {
+	runes []rune
+}
+
+func TakeFromSet(set *UniSet) UniSetBuilder {
+	builder := UniSetBuilder{}
+	builder.runes = set.runes
+	set.runes = nil
+	return builder
+}
+
+func (u *UniSetBuilder) Add(r rune) {
+	u.runes = append(u.runes, r)
+}
+
+func (u *UniSetBuilder) AddInterval(interval RuneInterval) {
+	first := min(interval.First, interval.Last)
+	first = max(0, first)
+	last := max(interval.First, interval.Last)
+	last = min(last, utf8.MaxRune)
+	for i := first; i <= last; i++ {
+		u.Add(i)
+	}
+}
+
+func (u *UniSetBuilder) AddSet(set *UniSet) {
+	u.runes = append(u.runes, set.runes...)
+}
+
+func (u *UniSetBuilder) BuildRaw() []rune {
+	slices.Sort(u.runes)
+	u.runes = slices.Compact(u.runes)
+	var tmp = u.runes
+	u.runes = nil
+	return tmp
+}
+
+func (u *UniSetBuilder) Build() UniSet {
+	return UniSet{runes: u.BuildRaw()}
+}
+
 func NewUniSetAll() UniSet {
-	set := UniSet{}
-	set.AddInterval(RuneInterval{First: 0, Last: utf8.MaxRune})
-	return set
+	builder := UniSetBuilder{}
+	builder.AddInterval(RuneInterval{0, utf8.MaxRune})
+	return builder.Build()
 }
 
 func (u *UniSet) Add(r rune) bool {
@@ -78,22 +119,18 @@ func (u *UniSet) Add(r rune) bool {
 }
 
 func (u *UniSet) AddInterval(interval RuneInterval) {
-	first := min(interval.First, interval.Last)
-	first = max(0, first)
-	last := max(interval.First, interval.Last)
-	last = min(last, utf8.MaxRune)
-	for i := first; i <= last; i++ {
-		u.Add(i)
-	}
+	builder := TakeFromSet(u)
+	builder.AddInterval(interval)
+	u.runes = builder.BuildRaw()
 }
 
 func (u *UniSet) AddSet(other *UniSet) {
 	if other == nil || u == other {
 		return
 	}
-	for _, r := range other.runes {
-		u.Add(r)
-	}
+	builder := TakeFromSet(u)
+	builder.AddSet(other)
+	u.runes = builder.BuildRaw()
 }
 
 func (u *UniSet) Remove(r rune) bool {

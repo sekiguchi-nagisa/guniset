@@ -14,9 +14,9 @@ type IntervalNode struct { // FF..U+1234
 }
 
 func (i *IntervalNode) Eval(*EvalContext) set.UniSet {
-	uniSet := set.NewUniSet()
-	uniSet.AddInterval(i.interval)
-	return uniSet
+	builder := set.UniSetBuilder{}
+	builder.AddInterval(i.interval)
+	return builder.Build()
 }
 
 type GeneralCategoryNode struct { // cat:Lu,Lo
@@ -32,13 +32,13 @@ func NewGeneralCategoryNode(properties []GeneralCategory) *GeneralCategoryNode {
 }
 
 func (g *GeneralCategoryNode) Eval(context *EvalContext) set.UniSet {
-	uniSet := set.NewUniSet()
+	builder := set.UniSetBuilder{}
 	for _, property := range g.properties {
 		if s, ok := context.catSet[property]; ok {
-			uniSet.AddSet(s)
+			builder.AddSet(s)
 		}
 	}
-	return uniSet
+	return builder.Build()
 }
 
 type EastAsianWidthNode struct { // eaw:W,F
@@ -54,15 +54,15 @@ func NewEastAsianWidthNode(properties []EastAsianWidth) *EastAsianWidthNode {
 }
 
 func (e *EastAsianWidthNode) Eval(context *EvalContext) set.UniSet {
-	uniSet := set.NewUniSet()
+	builder := set.UniSetBuilder{}
 	for _, property := range e.properties {
 		if s, ok := context.eawSet[property]; ok {
-			uniSet.AddSet(s)
+			builder.AddSet(s)
 		} else if property == EAW_N {
-			uniSet.AddSet(context.FillEawN())
+			builder.AddSet(context.FillEawN())
 		}
 	}
-	return uniSet
+	return builder.Build()
 }
 
 type CompNode struct { // ! SET
