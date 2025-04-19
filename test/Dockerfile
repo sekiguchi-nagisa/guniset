@@ -11,6 +11,6 @@ COPY . /home/tux/guniset
 # (https://docs.github.com/en/actions/creating-actions/dockerfile-support-for-github-actions)
 WORKDIR /home/tux/guniset/
 
-CMD DIR="$(pwd)" && cd  /home/tux/guniset && git config --global --add safe.directory "${PWD}" && \
+CMD DIR="$(pwd)" && cd  /home/tux/guniset && ls -la && git config --global --add safe.directory "${PWD}" && \
     ./scripts/build.sh && ./scripts/get_unicode_data.sh && \
     GUNISET_DIR=./unicode_dir ./scripts/run_e2e_test.arsh ./guniset
