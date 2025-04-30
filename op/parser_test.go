@@ -24,6 +24,12 @@ var lexerTestCases = []struct {
 	{"-124", []Token{{TokenMinus, "-"}, {TokenRune, "124"}}},
 	{"U+(455)", []Token{{TokenId, "U"}, {TokenPlus, "+"},
 		{TokenLParen, "("}, {TokenRune, "455"}, {TokenRParen, ")"}}},
+	{"cat:Cn * eaw:F", []Token{
+		{TokenId, "cat"}, {TokenColon, ":"},
+		{TokenId, "Cn"}, {TokenSpace, " "},
+		{TokenMul, "*"}, {TokenSpace, " "},
+		{TokenId, "eaw"}, {TokenColon, ":"},
+		{TokenId, "F"}}},
 }
 
 func TestLexer(t *testing.T) {
@@ -129,4 +135,12 @@ func TestParserBinaryPrecedence(t *testing.T) {
 	assert.IsType(t, &DiffNode{}, node)
 	assert.IsType(t, &UnionNode{}, node.(*DiffNode).left)
 	assert.IsType(t, &EastAsianWidthNode{}, node.(*DiffNode).right)
+
+	node, err = NewParser().Run([]byte("\t \t\n  cat:Mn + 0FeFf * eaw:F"))
+	assert.Nil(t, err)
+	assert.IsType(t, &UnionNode{}, node)
+	assert.IsType(t, &GeneralCategoryNode{}, node.(*UnionNode).left)
+	assert.IsType(t, &IntersectNode{}, node.(*UnionNode).right)
+	assert.IsType(t, &IntervalNode{}, node.(*UnionNode).right.(*IntersectNode).left)
+	assert.IsType(t, &EastAsianWidthNode{}, node.(*UnionNode).right.(*IntersectNode).right)
 }

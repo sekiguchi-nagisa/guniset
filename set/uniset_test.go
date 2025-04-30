@@ -100,6 +100,18 @@ func TestBase(t *testing.T) {
 
 	set = NewUniSet()
 	assert.False(t, set.Add(-1)) // ignore invalid rune
+
+	// intersection
+	set = NewUniSet('a', 'b', 'c', 'e', 'f')
+	other = NewUniSet('a', 'c', 'e', 'g')
+	set = set.AndSet(&other)
+	assert.Equal(t, fmt.Sprintf("{0x%04x..0x%04x,0x%04x..0x%04x,0x%04x..0x%04x}",
+		'a', 'a', 'c', 'c', 'e', 'e'), set.String())
+
+	set = NewUniSet('a', 'b', 'c', 'd', 'f')
+	other = NewUniSet('g', 'h', 'i', 'j', 'k')
+	set = set.AndSet(&other)
+	assert.Equal(t, "{}", set.String())
 }
 
 func TestAdd(t *testing.T) {

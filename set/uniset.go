@@ -161,6 +161,16 @@ func (u *UniSet) RemoveSet(other *UniSet) {
 	})
 }
 
+func (u *UniSet) AndSet(other *UniSet) UniSet {
+	builder := UniSetBuilder{}
+	for _, r := range other.runes {
+		if u.Find(r) {
+			builder.Add(r)
+		}
+	}
+	return builder.Build()
+}
+
 func (u *UniSet) Filter(f func(r rune) bool) {
 	u.runes = slices.DeleteFunc(u.runes, func(r rune) bool {
 		return !f(r)

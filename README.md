@@ -3,38 +3,48 @@
 
 # guniset
 
-Unicode set extraction tool written in Go. It is heavily inspired by 
+Unicode set extraction tool written in Go. It is heavily inspired by
 [depp/uniset](https://github.com/depp/uniset)
 
 ## Usage
+
 ```sh
 GUNISET_DIR=./unicode_data guniset <set operation>
 ```
 
-The ``GUNISET_DIR`` environmental variable must indicate a directory 
+The ``GUNISET_DIR`` environmental variable must indicate a directory
 having ``DerivedGeneralCategory.txt`` and ``EastAsianWidth.txt``
 
 ## Set Operation
+
 ### Operators
+
 * ``+``: union
 * ``-``: difference
+* ``*``: intersection
 * ``!``: complement
 * ``( )``: grouping
 
 ### Primitives
+
 * ``cat:Cn,Me``: Unicode General Category set
 * ``eaw:F,W``: East Asian Width set
 * ``U+1234``, ``0..1FFF``: Unicode code point
 
 ### Grammar
+
 ```
 Expression 
     : UnionOrDiffEpxression
 
 UnionOrDiffExpression 
+    : IntersectionExpression
+    | UnionOrDiffExpression '+' IntersectionExpression
+    | UnionOrDiffExpression '-' IntersectionExpression
+
+IntersectionExpression
     : ComplementExpression
-    | UnionOrDiffExpression '+' ComplementExpression
-    | UnionOrDiffExpression '-' ComplementExpression
+    | IntersectionExpression '*' ComplementExpression
 
 ComplementExpression
     : PrimaryExpression

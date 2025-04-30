@@ -108,3 +108,15 @@ func (d *DiffNode) Eval(context *EvalContext) set.UniSet {
 	leftSet.RemoveSet(&rightSet)
 	return leftSet
 }
+
+type IntersectNode struct {
+	left  Node
+	right Node
+}
+
+func (i *IntersectNode) Eval(context *EvalContext) set.UniSet {
+	leftSet := i.left.Eval(context)
+	rightSet := i.right.Eval(context)
+	newSet := leftSet.AndSet(&rightSet)
+	return newSet
+}

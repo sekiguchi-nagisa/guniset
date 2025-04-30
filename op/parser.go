@@ -20,6 +20,7 @@ const (
 	TokenNegate                  // !
 	TokenPlus                    // +
 	TokenMinus                   // -
+	TokenMul                     // *
 	TokenRange                   // ..
 	TokenSpace                   // space
 )
@@ -40,6 +41,7 @@ var lexemes = []Lexeme{
 	{regexp.MustCompile(`^!`), TokenNegate},
 	{regexp.MustCompile(`^[+]`), TokenPlus},
 	{regexp.MustCompile(`^-`), TokenMinus},
+	{regexp.MustCompile(`^[*]`), TokenMul},
 	{regexp.MustCompile(`^[.][.]`), TokenRange},
 	{regexp.MustCompile(`^[ \t\n]+`), TokenSpace},
 }
@@ -219,18 +221,34 @@ func (p *Parser) parseComplement() Node {
 	return p.parsePrimary()
 }
 
-func (p *Parser) parseUnionOrDiff() Node {
+func (p *Parser) parseIntersect() Node {
 	left := p.parseComplement()
+	for p.hasNext() {
+		switch curKind := p.fetch().kind; curKind {
+		case TokenMul:
+			p.consume()
+			right := p.parseComplement()
+			left = &IntersectNode{left, right}
+			continue
+		default:
+		}
+		break
+	}
+	return left
+}
+
+func (p *Parser) parseUnionOrDiff() Node {
+	left := p.parseIntersect()
 	for p.hasNext() {
 		switch curKind := p.fetch().kind; curKind {
 		case TokenPlus:
 			p.consume()
-			right := p.parseComplement()
+			right := p.parseIntersect()
 			left = &UnionNode{left, right}
 			continue
 		case TokenMinus:
 			p.consume()
-			right := p.parseComplement()
+			right := p.parseIntersect()
 			left = &DiffNode{left, right}
 			continue
 		default:
