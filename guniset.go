@@ -82,6 +82,18 @@ func (g *GUniSet) Run(filterOp SetFilterOp) error {
 	return PrintUniSet(&uniSet, g.Writer)
 }
 
+func (g *GUniSet) Query() error {
+	r, err := set.ParseRune(g.SetOperation)
+	if err != nil {
+		return err
+	}
+	ctx, err := op.NewEvalContext(g.GeneralCategory, g.EastAsianWidth)
+	if err != nil {
+		return err
+	}
+	return ctx.Query(r, g.Writer)
+}
+
 func (g *GUniSet) Close() error {
 	err1 := g.GeneralCategory.Close()
 	err2 := g.EastAsianWidth.Close()

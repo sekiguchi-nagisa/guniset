@@ -46,6 +46,28 @@ func (e *EvalContext) FillEawN() *set.UniSet {
 	return e.eawSet[EAW_N]
 }
 
+func (e *EvalContext) Query(r rune, writer io.Writer) error {
+	e.FillEawN()
+	cat := CAT_Cn
+	eaw := EAW_N
+	for cc, uniSet := range e.catSet {
+		if uniSet.Find(r) {
+			cat = cc
+			break
+		}
+	}
+	for e, uniSet := range e.eawSet {
+		if uniSet.Find(r) {
+			eaw = e
+			break
+		}
+	}
+	_, err := fmt.Fprintf(writer, "CodePoint: U+%04X\n"+
+		"GeneralCategory: %v\n"+
+		"EastAsianWidth: %v\n", r, cat, eaw)
+	return err
+}
+
 type LineReader struct {
 	name    string
 	scanner *bufio.Scanner
