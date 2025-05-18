@@ -47,7 +47,6 @@ func (e *EvalContext) FillEawN() *set.UniSet {
 }
 
 func (e *EvalContext) Query(r rune, writer io.Writer) error {
-	e.FillEawN()
 	cat := CAT_Cn
 	eaw := EAW_N
 	for cc, uniSet := range e.catSet {
