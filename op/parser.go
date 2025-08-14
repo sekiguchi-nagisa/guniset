@@ -2,8 +2,9 @@ package op
 
 import (
 	"fmt"
-	"github.com/sekiguchi-nagisa/guniset/set"
 	"regexp"
+
+	"github.com/sekiguchi-nagisa/guniset/set"
 )
 
 //go:generate go run -mod=mod golang.org/x/tools/cmd/stringer -type TokenKind -trimprefix Token -linecomment

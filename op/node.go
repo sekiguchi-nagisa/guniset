@@ -1,8 +1,9 @@
 package op
 
 import (
-	"github.com/sekiguchi-nagisa/guniset/set"
 	"slices"
+
+	"github.com/sekiguchi-nagisa/guniset/set"
 )
 
 type Node interface {

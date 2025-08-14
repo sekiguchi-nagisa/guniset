@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"log"
 	"net/http"
@@ -11,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 var gUniSetDir string

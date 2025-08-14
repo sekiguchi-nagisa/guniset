@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/alecthomas/kong"
 	"io"
 	"os"
 	"runtime/debug"
+
+	"github.com/alecthomas/kong"
 )
 
 var CLI struct {

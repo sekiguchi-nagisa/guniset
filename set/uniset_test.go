@@ -2,10 +2,11 @@ package set
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 var setAddTestCases = []struct {

@@ -3,9 +3,10 @@ package op
 import (
 	"bufio"
 	"fmt"
-	"github.com/sekiguchi-nagisa/guniset/set"
 	"io"
 	"strings"
+
+	"github.com/sekiguchi-nagisa/guniset/set"
 )
 
 type EvalContext struct {

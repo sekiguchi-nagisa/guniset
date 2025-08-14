@@ -3,11 +3,12 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/sekiguchi-nagisa/guniset/op"
-	"github.com/sekiguchi-nagisa/guniset/set"
 	"io"
 	"os"
 	"path"
+
+	"github.com/sekiguchi-nagisa/guniset/op"
+	"github.com/sekiguchi-nagisa/guniset/set"
 )
 
 type SetFilterOp int8
