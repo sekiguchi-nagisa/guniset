@@ -45,8 +45,9 @@ const _GeneralCategory_name = "LuLlLtLmLoMnMcMeNdNlNoSmScSkSoPcPdPsPePiPfPoZsZlZ
 var _GeneralCategory_index = [...]uint8{0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60}
 
 func (i GeneralCategory) String() string {
-	if i < 0 || i >= GeneralCategory(len(_GeneralCategory_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_GeneralCategory_index)-1 {
 		return "GeneralCategory(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _GeneralCategory_name[_GeneralCategory_index[i]:_GeneralCategory_index[i+1]]
+	return _GeneralCategory_name[_GeneralCategory_index[idx]:_GeneralCategory_index[idx+1]]
 }

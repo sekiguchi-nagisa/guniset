@@ -21,8 +21,9 @@ const _EastAsianWidth_name = "WFANNaH"
 var _EastAsianWidth_index = [...]uint8{0, 1, 2, 3, 4, 6, 7}
 
 func (i EastAsianWidth) String() string {
-	if i < 0 || i >= EastAsianWidth(len(_EastAsianWidth_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_EastAsianWidth_index)-1 {
 		return "EastAsianWidth(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _EastAsianWidth_name[_EastAsianWidth_index[i]:_EastAsianWidth_index[i+1]]
+	return _EastAsianWidth_name[_EastAsianWidth_index[idx]:_EastAsianWidth_index[idx+1]]
 }

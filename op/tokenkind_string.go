@@ -27,8 +27,9 @@ const _TokenKind_name = "identifiercodePoint:,()!+-*..space"
 var _TokenKind_index = [...]uint8{0, 10, 19, 20, 21, 22, 23, 24, 25, 26, 27, 29, 34}
 
 func (i TokenKind) String() string {
-	if i < 0 || i >= TokenKind(len(_TokenKind_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_TokenKind_index)-1 {
 		return "TokenKind(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _TokenKind_name[_TokenKind_index[i]:_TokenKind_index[i+1]]
+	return _TokenKind_name[_TokenKind_index[idx]:_TokenKind_index[idx+1]]
 }
