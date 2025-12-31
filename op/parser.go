@@ -201,7 +201,7 @@ func (p *Parser) parsePrimary() Node {
 			p.consume()
 			last = p.parseRune()
 		}
-		return &IntervalNode{interval: set.RuneInterval{First: first, Last: last}}
+		return &RangeNode{runeRange: set.RuneRange{First: first, Last: last}}
 	case TokenLParen:
 		p.consume()
 		node := p.parseUnionOrDiff()

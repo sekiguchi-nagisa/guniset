@@ -43,15 +43,15 @@ func TestLexer(t *testing.T) {
 func TestParserPrimary(t *testing.T) {
 	node, err := NewParser().Run([]byte(" 1234 "))
 	assert.Nil(t, err)
-	assert.IsType(t, &IntervalNode{}, node)
-	assert.Equal(t, rune(0x1234), node.(*IntervalNode).interval.First)
-	assert.Equal(t, rune(0x1234), node.(*IntervalNode).interval.Last)
+	assert.IsType(t, &RangeNode{}, node)
+	assert.Equal(t, rune(0x1234), node.(*RangeNode).runeRange.First)
+	assert.Equal(t, rune(0x1234), node.(*RangeNode).runeRange.Last)
 
 	node, err = NewParser().Run([]byte(" 1234 .. U+FFF0 "))
 	assert.Nil(t, err)
-	assert.IsType(t, &IntervalNode{}, node)
-	assert.Equal(t, rune(0x1234), node.(*IntervalNode).interval.First)
-	assert.Equal(t, rune(0xFFF0), node.(*IntervalNode).interval.Last)
+	assert.IsType(t, &RangeNode{}, node)
+	assert.Equal(t, rune(0x1234), node.(*RangeNode).runeRange.First)
+	assert.Equal(t, rune(0xFFF0), node.(*RangeNode).runeRange.Last)
 
 	node, err = NewParser().Run([]byte("cat : Lu"))
 	assert.Nil(t, err)
@@ -91,9 +91,9 @@ func TestParserNegate(t *testing.T) {
 	assert.Equal(t, 1, len(node.(*UnionNode).left.(*CompNode).node.(*GeneralCategoryNode).properties))
 	assert.Equal(t, CAT_Zs, node.(*UnionNode).left.(*CompNode).
 		node.(*GeneralCategoryNode).properties[0])
-	assert.IsType(t, &IntervalNode{}, node.(*UnionNode).right)
-	assert.Equal(t, rune(0xFEFF), node.(*UnionNode).right.(*IntervalNode).interval.First)
-	assert.Equal(t, rune(0xFEFF), node.(*UnionNode).right.(*IntervalNode).interval.Last)
+	assert.IsType(t, &RangeNode{}, node.(*UnionNode).right)
+	assert.Equal(t, rune(0xFEFF), node.(*UnionNode).right.(*RangeNode).runeRange.First)
+	assert.Equal(t, rune(0xFEFF), node.(*UnionNode).right.(*RangeNode).runeRange.Last)
 }
 
 func TestParserBinary(t *testing.T) {
@@ -103,9 +103,9 @@ func TestParserBinary(t *testing.T) {
 	assert.IsType(t, &GeneralCategoryNode{}, node.(*UnionNode).left)
 	assert.Equal(t, 1, len(node.(*UnionNode).left.(*GeneralCategoryNode).properties))
 	assert.Equal(t, CAT_Zs, node.(*UnionNode).left.(*GeneralCategoryNode).properties[0])
-	assert.IsType(t, &IntervalNode{}, node.(*UnionNode).right)
-	assert.Equal(t, rune(0xfeff), node.(*UnionNode).right.(*IntervalNode).interval.First)
-	assert.Equal(t, rune(0xfeff), node.(*UnionNode).right.(*IntervalNode).interval.Last)
+	assert.IsType(t, &RangeNode{}, node.(*UnionNode).right)
+	assert.Equal(t, rune(0xfeff), node.(*UnionNode).right.(*RangeNode).runeRange.First)
+	assert.Equal(t, rune(0xfeff), node.(*UnionNode).right.(*RangeNode).runeRange.Last)
 
 	node, err = NewParser().Run([]byte("(eaw:F + cat:Zs) - (U+1234 + 0FeFf)"))
 	assert.Nil(t, err)
@@ -121,12 +121,12 @@ func TestParserBinary(t *testing.T) {
 		right.(*GeneralCategoryNode).properties[0])
 
 	assert.IsType(t, &UnionNode{}, node.(*DiffNode).right)
-	assert.IsType(t, &IntervalNode{}, node.(*DiffNode).right.(*UnionNode).left)
-	assert.Equal(t, rune(0x1234), node.(*DiffNode).right.(*UnionNode).left.(*IntervalNode).interval.First)
-	assert.Equal(t, rune(0x1234), node.(*DiffNode).right.(*UnionNode).left.(*IntervalNode).interval.Last)
-	assert.IsType(t, &IntervalNode{}, node.(*DiffNode).right.(*UnionNode).right)
-	assert.Equal(t, rune(0xfeff), node.(*DiffNode).right.(*UnionNode).right.(*IntervalNode).interval.First)
-	assert.Equal(t, rune(0xfeff), node.(*DiffNode).right.(*UnionNode).right.(*IntervalNode).interval.Last)
+	assert.IsType(t, &RangeNode{}, node.(*DiffNode).right.(*UnionNode).left)
+	assert.Equal(t, rune(0x1234), node.(*DiffNode).right.(*UnionNode).left.(*RangeNode).runeRange.First)
+	assert.Equal(t, rune(0x1234), node.(*DiffNode).right.(*UnionNode).left.(*RangeNode).runeRange.Last)
+	assert.IsType(t, &RangeNode{}, node.(*DiffNode).right.(*UnionNode).right)
+	assert.Equal(t, rune(0xfeff), node.(*DiffNode).right.(*UnionNode).right.(*RangeNode).runeRange.First)
+	assert.Equal(t, rune(0xfeff), node.(*DiffNode).right.(*UnionNode).right.(*RangeNode).runeRange.Last)
 }
 
 func TestParserBinaryPrecedence(t *testing.T) {
@@ -141,6 +141,6 @@ func TestParserBinaryPrecedence(t *testing.T) {
 	assert.IsType(t, &UnionNode{}, node)
 	assert.IsType(t, &GeneralCategoryNode{}, node.(*UnionNode).left)
 	assert.IsType(t, &IntersectNode{}, node.(*UnionNode).right)
-	assert.IsType(t, &IntervalNode{}, node.(*UnionNode).right.(*IntersectNode).left)
+	assert.IsType(t, &RangeNode{}, node.(*UnionNode).right.(*IntersectNode).left)
 	assert.IsType(t, &EastAsianWidthNode{}, node.(*UnionNode).right.(*IntersectNode).right)
 }

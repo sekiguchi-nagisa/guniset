@@ -10,13 +10,13 @@ type Node interface {
 	Eval(*EvalContext) set.UniSet
 }
 
-type IntervalNode struct { // FF..U+1234
-	interval set.RuneInterval
+type RangeNode struct { // FF..U+1234
+	runeRange set.RuneRange
 }
 
-func (i *IntervalNode) Eval(*EvalContext) set.UniSet {
+func (i *RangeNode) Eval(*EvalContext) set.UniSet {
 	builder := set.UniSetBuilder{}
-	builder.AddInterval(i.interval)
+	builder.AddRange(i.runeRange)
 	return builder.Build()
 }
 

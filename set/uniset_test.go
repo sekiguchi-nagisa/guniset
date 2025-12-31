@@ -47,7 +47,7 @@ func stringify(runes []rune) string {
 
 func TestBase(t *testing.T) {
 	set := NewUniSet()
-	assert.Equal(t, 0, len(slices.Collect(set.Interval)))
+	assert.Equal(t, 0, len(slices.Collect(set.Range)))
 	assert.True(t, set.Add('a'))
 	assert.True(t, set.Add('b'))
 	assert.False(t, set.Add('a')) // already added
@@ -60,7 +60,7 @@ func TestBase(t *testing.T) {
 
 	set = NewUniSet('a', 'b', 'c', 'e', 'f')
 	assert.Equal(t, fmt.Sprintf("{0x%04x..0x%04x,0x%04x..0x%04x}", 'a', 'c', 'e', 'f'), set.String())
-	runes := slices.Collect(set.Interval)
+	runes := slices.Collect(set.Range)
 	assert.Equal(t, 2, len(runes))
 	assert.Equal(t, 'a', runes[0].First)
 	assert.Equal(t, 'c', runes[0].Last)
@@ -69,13 +69,13 @@ func TestBase(t *testing.T) {
 
 	assert.True(t, set.Add('d'))
 	assert.Equal(t, fmt.Sprintf("{0x%04x..0x%04x}", 'a', 'f'), set.String())
-	runes = slices.Collect(set.Interval)
+	runes = slices.Collect(set.Range)
 	assert.Equal(t, 1, len(runes))
 	assert.Equal(t, 'a', runes[0].First)
 	assert.Equal(t, 'f', runes[0].Last)
 
 	set = UniSet{}
-	set.AddInterval(RuneInterval{'a', 'e'})
+	set.AddRange(RuneRange{'a', 'e'})
 	assert.Equal(t, fmt.Sprintf("{0x%04x..0x%04x}", 'a', 'e'), set.String())
 	assert.True(t, set.Find('a'))
 	assert.True(t, set.Find('b'))
@@ -83,11 +83,11 @@ func TestBase(t *testing.T) {
 	assert.True(t, set.Find('d'))
 	assert.True(t, set.Find('e'))
 	assert.False(t, set.Find('f'))
-	set.RemoveInterval(RuneInterval{'c', 'e'})
+	set.RemoveRange(RuneRange{'c', 'e'})
 	assert.Equal(t, fmt.Sprintf("{0x%04x..0x%04x}", 'a', 'b'), set.String())
 
 	set = UniSet{}
-	set.AddInterval(RuneInterval{'c', 'a'})
+	set.AddRange(RuneRange{'c', 'a'})
 	assert.Equal(t, fmt.Sprintf("{0x%04x..0x%04x}", 'a', 'c'), set.String())
 	assert.True(t, set.Remove('a'))
 	assert.Equal(t, fmt.Sprintf("{0x%04x..0x%04x}", 'b', 'c'), set.String())

@@ -14,17 +14,17 @@ var eaws = [
 'F', 'W', 'H', 'A', 'Na' # exclude 'N'
 ]
 
-type Interval {
+type Range {
   let first: String
   let last: String
   let firstN: Int
   let lastN: Int
 }
 
-function try_merge(o : Interval) : Interval? for Interval {
+function try_merge(o : Range) : Range? for Range {
     if $this.lastN + 1 == $o.firstN {
         # merge range
-        return new Interval(
+        return new Range(
             $this.first,
             $o.last,
             $this.firstN,
@@ -34,9 +34,9 @@ function try_merge(o : Interval) : Interval? for Interval {
     return $none
 }
 
-var eaw_map : [String: [Interval]]
+var eaw_map : [String: [Range]]
 for eaw in $eaws {
-  $eaw_map[$eaw] = new [Interval]()
+  $eaw_map[$eaw] = new [Range]()
 }
 
 var count =0 
@@ -51,7 +51,7 @@ for line in <(cat ./EastAsianWidth.txt) {
   # var r = "{ 0x$first, 0x$last },"
   var eaw = $matched.named('eaw')!
   $eaw == 'N' && continue  # not emit N
-  $eaw_map[$eaw].add(new Interval($first, $last, $firstN, $lastN))
+  $eaw_map[$eaw].add(new Range($first, $last, $firstN, $lastN))
 }
 
 # check cate
@@ -61,7 +61,7 @@ for _, values in $eaw_map {
 
 # merge
 for eaw in $eaws {
-  var new_values: [Interval]
+  var new_values: [Range]
   var old_values = $eaw_map[$eaw]
   for value in $old_values {
     if $new_values.empty() {

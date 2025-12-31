@@ -50,8 +50,8 @@ func NewGUniSetFromDir(unicodeDir string, writer io.Writer, setOperation string)
 }
 
 func PrintUniSet(uniSet *set.UniSet, writer io.Writer) error {
-	for interval := range uniSet.Interval {
-		_, err := fmt.Fprintf(writer, "{ 0x%04X, 0x%04X },\n", interval.First, interval.Last)
+	for runeRange := range uniSet.Range {
+		_, err := fmt.Fprintf(writer, "{ 0x%04X, 0x%04X },\n", runeRange.First, runeRange.Last)
 		if err != nil {
 			return err
 		}

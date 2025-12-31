@@ -110,7 +110,7 @@ func LoadGeneralCategoryMap(reader io.Reader) (map[GeneralCategory]*set.UniSet, 
 			continue
 		}
 
-		// extract interval
+		// extract runeRange
 		ss := strings.Split(line, ";")
 		cc := strings.Split(strings.TrimSpace(ss[0]), "..")
 		first, err := set.ParseRune(cc[0])
@@ -131,7 +131,7 @@ func LoadGeneralCategoryMap(reader io.Reader) (map[GeneralCategory]*set.UniSet, 
 		if err != nil {
 			return nil, lr.formatErr(err)
 		}
-		builderMap[cate].AddInterval(set.RuneInterval{
+		builderMap[cate].AddRange(set.RuneRange{
 			First: first,
 			Last:  last,
 		})
@@ -165,7 +165,7 @@ func LoadEastAsianWidthMap(reader io.Reader) (map[EastAsianWidth]*set.UniSet, er
 			continue
 		}
 
-		// extract interval
+		// extract runeRange
 		ss := strings.Split(line, ";")
 		cc := strings.Split(strings.TrimSpace(ss[0]), "..")
 		first, err := set.ParseRune(cc[0])
@@ -189,7 +189,7 @@ func LoadEastAsianWidthMap(reader io.Reader) (map[EastAsianWidth]*set.UniSet, er
 		if eaw == EAW_N {
 			continue // fill N later
 		}
-		builderMap[eaw].AddInterval(set.RuneInterval{
+		builderMap[eaw].AddRange(set.RuneRange{
 			First: first,
 			Last:  last,
 		})

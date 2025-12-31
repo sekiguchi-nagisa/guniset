@@ -8,8 +8,8 @@ import (
 	"unicode/utf8"
 )
 
-// RuneInterval code point interval
-type RuneInterval struct {
+// RuneRange code point range (inclusive, inclusive)
+type RuneRange struct {
 	First rune
 	Last  rune
 }
@@ -41,7 +41,7 @@ func ParseRune(s string) (rune, error) {
 
 // UniSet set structure for Unicode code point
 type UniSet struct {
-	runes []rune //TODO: use rune interval for large data
+	runes []rune //TODO: use rune range for large data
 }
 
 func NewUniSet(runes ...rune) UniSet {
@@ -67,10 +67,10 @@ func (u *UniSetBuilder) Add(r rune) {
 	u.runes = append(u.runes, r)
 }
 
-func (u *UniSetBuilder) AddInterval(interval RuneInterval) {
-	first := min(interval.First, interval.Last)
+func (u *UniSetBuilder) AddRange(runeRange RuneRange) {
+	first := min(runeRange.First, runeRange.Last)
 	first = max(0, first)
-	last := max(interval.First, interval.Last)
+	last := max(runeRange.First, runeRange.Last)
 	last = min(last, utf8.MaxRune)
 	for i := first; i <= last; i++ {
 		u.Add(i)
@@ -95,7 +95,7 @@ func (u *UniSetBuilder) Build() UniSet {
 
 func NewUniSetAll() UniSet {
 	builder := UniSetBuilder{}
-	builder.AddInterval(RuneInterval{0, utf8.MaxRune})
+	builder.AddRange(RuneRange{0, utf8.MaxRune})
 	return builder.Build()
 }
 
@@ -118,9 +118,9 @@ func (u *UniSet) Add(r rune) bool {
 	return true
 }
 
-func (u *UniSet) AddInterval(interval RuneInterval) {
+func (u *UniSet) AddRange(runeRange RuneRange) {
 	builder := TakeFromSet(u)
-	builder.AddInterval(interval)
+	builder.AddRange(runeRange)
 	u.runes = builder.BuildRaw()
 }
 
@@ -144,9 +144,9 @@ func (u *UniSet) Remove(r rune) bool {
 	return s
 }
 
-func (u *UniSet) RemoveInterval(interval RuneInterval) {
-	first := min(interval.First, interval.Last)
-	last := max(interval.First, interval.Last)
+func (u *UniSet) RemoveRange(runeRange RuneRange) {
+	first := min(runeRange.First, runeRange.Last)
+	last := max(runeRange.First, runeRange.Last)
 	u.runes = slices.DeleteFunc(u.runes, func(r rune) bool {
 		return r >= first && r <= last
 	})
@@ -188,7 +188,7 @@ func (u *UniSet) Copy() UniSet {
 	return copied
 }
 
-func (u *UniSet) Interval(yield func(interval RuneInterval) bool) {
+func (u *UniSet) Range(yield func(runeRange RuneRange) bool) {
 	for i := 0; i < len(u.runes); {
 		first := u.runes[i]
 		last := first
@@ -202,7 +202,7 @@ func (u *UniSet) Interval(yield func(interval RuneInterval) bool) {
 				break
 			}
 		}
-		if !yield(RuneInterval{first, last}) {
+		if !yield(RuneRange{first, last}) {
 			return
 		}
 	}
@@ -213,12 +213,12 @@ func (u *UniSet) String() string {
 	sb.WriteRune('{')
 	sb.Grow(len(u.runes) / 4)
 	c := 0
-	for interval := range u.Interval {
+	for runeRange := range u.Range {
 		if c > 0 {
 			sb.WriteRune(',')
 		}
 		c += 1
-		sb.WriteString(fmt.Sprintf("0x%04x..0x%04x", interval.First, interval.Last))
+		sb.WriteString(fmt.Sprintf("0x%04x..0x%04x", runeRange.First, runeRange.Last))
 	}
 	sb.WriteRune('}')
 	return sb.String()
