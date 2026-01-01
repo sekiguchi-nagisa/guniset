@@ -15,6 +15,7 @@ var CLI struct {
 	Set     string           `arg:"" required:"" help:"Specify set operation"`
 	Filter  string           `optional:"" help:"Filter output (all: include all, bmp: only bmp, non-bmp: exclude bmp)" enum:"all,,bmp,non-bmp" default:"all"`
 	Query   bool             `short:"q" optional:"" help:"Query code point property"`
+	Info    bool             `short:"i" optional:"" help:"Show information about Unicode database"`
 }
 
 var version = "" // for version embedding (specified like "-X main.version=v0.1.0")
@@ -68,6 +69,14 @@ func main() {
 		_ = g.Close()
 	}(g)
 
+	if CLI.Info {
+		err = g.Info()
+		if err != nil {
+			_, _ = fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		return
+	}
 	if CLI.Query {
 		err = g.Query()
 		if err != nil {

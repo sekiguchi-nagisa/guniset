@@ -26,6 +26,7 @@ var StrToSetPrintOps = map[string]SetFilterOp{
 }
 
 type GUniSet struct {
+	unicodeDir      string
 	GeneralCategory io.ReadCloser // DerivedGeneralCategory.txt
 	EastAsianWidth  io.ReadCloser // EastAsianWidth.txt
 	Writer          io.Writer     // for generated Unicode set string
@@ -42,6 +43,7 @@ func NewGUniSetFromDir(unicodeDir string, writer io.Writer, setOperation string)
 		return nil, err
 	}
 	return &GUniSet{
+		unicodeDir:      unicodeDir,
 		GeneralCategory: generalCategory,
 		EastAsianWidth:  eastAsianWidth,
 		Writer:          writer,
@@ -93,6 +95,26 @@ func (g *GUniSet) Query() error {
 		return err
 	}
 	return ctx.Query(r, g.Writer)
+}
+
+func (g *GUniSet) Info() error {
+	ctx, err := op.NewEvalContext(g.GeneralCategory, g.EastAsianWidth)
+	if err != nil {
+		return err
+	}
+	_, err = fmt.Fprintf(g.Writer, "GUNISET_DIR: %s\n", g.unicodeDir)
+	if err != nil {
+		return err
+	}
+	err = ctx.CateMap.PrintHeader(g.Writer)
+	if err != nil {
+		return err
+	}
+	err = ctx.EawMap.PrintHeader(g.Writer)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (g *GUniSet) Close() error {
