@@ -2,6 +2,7 @@ package set
 
 import (
 	"fmt"
+	"math/rand"
 	"slices"
 	"strconv"
 	"strings"
@@ -208,6 +209,14 @@ func (u *UniSet) Range(yield func(runeRange RuneRange) bool) {
 	}
 }
 
+func (u UniSet) Iter(yield func(r rune) bool) {
+	for _, r := range u.runes {
+		if !yield(r) {
+			return
+		}
+	}
+}
+
 func (u *UniSet) String() string {
 	sb := strings.Builder{}
 	sb.WriteRune('{')
@@ -222,4 +231,17 @@ func (u *UniSet) String() string {
 	}
 	sb.WriteRune('}')
 	return sb.String()
+}
+
+func (u *UniSet) Sample(limit int) UniSet {
+	runeSet := map[rune]struct{}{}
+	limit = min(limit, len(u.runes)/2)
+	for len(runeSet) < limit {
+		runeSet[u.runes[rand.Intn(len(u.runes))]] = struct{}{}
+	}
+	builder := UniSetBuilder{}
+	for r := range runeSet {
+		builder.Add(r)
+	}
+	return builder.Build()
 }

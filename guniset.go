@@ -61,14 +61,14 @@ func PrintUniSet(uniSet *set.UniSet, writer io.Writer) error {
 	return nil
 }
 
-func (g *GUniSet) Run(filterOp SetFilterOp) error {
+func (g *GUniSet) Run(filterOp SetFilterOp) (*set.UniSet, error) {
 	ctx, err := op.NewEvalContext(g.GeneralCategory, g.EastAsianWidth)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	node, err := op.NewParser().Run([]byte(g.SetOperation))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	uniSet := node.Eval(ctx)
 	switch filterOp {
@@ -82,7 +82,26 @@ func (g *GUniSet) Run(filterOp SetFilterOp) error {
 			return set.IsSupplementaryRune(r)
 		})
 	}
-	return PrintUniSet(&uniSet, g.Writer)
+	return &uniSet, nil
+}
+
+func (g *GUniSet) RunAndPrint(filterOp SetFilterOp) error {
+	uniSet, err := g.Run(filterOp)
+	if err != nil {
+		return err
+	}
+	return PrintUniSet(uniSet, g.Writer)
+}
+
+func (g *GUniSet) RunAndSampling(filterOp SetFilterOp, limit int) error {
+	uniSet, err := g.Run(filterOp)
+	if err != nil {
+		return err
+	}
+	for r := range uniSet.Sample(limit).Iter {
+		_, _ = fmt.Fprintf(g.Writer, "U+%04X\n", r)
+	}
+	return nil
 }
 
 func (g *GUniSet) Query() error {

@@ -20,11 +20,18 @@ type CLIQuery struct {
 type CLIInfo struct {
 }
 
+type CLISample struct {
+	Set    string `arg:"" required:"" help:"Specify set operation"`
+	Filter string `optional:"" help:"Filter output (all: include all, bmp: only bmp, non-bmp: exclude bmp)" enum:"all,,bmp,non-bmp" default:"all"`
+	Limit  int    `optional:"" help:"Limit sampling count" default:"5"`
+}
+
 var CLI struct {
 	Version  kong.VersionFlag `short:"v" help:"Show version information"`
 	Generate CLIGen           `cmd:"" help:"Generate Unicode set"`
 	Query    CLIQuery         `cmd:"" help:"Query code point property"`
 	Info     CLIInfo          `cmd:"" help:"Show information about Unicode database"`
+	Sample   CLISample        `cmd:"" help:"Sample Unicode code points"`
 }
 
 var version = "" // for version embedding (specified like "-X main.version=v0.1.0")
@@ -77,7 +84,7 @@ func (c *CLIGen) Run() error {
 	if !ok {
 		return fmt.Errorf("unknown filter %q\n", c.Filter)
 	}
-	return g.Run(printOp)
+	return g.RunAndPrint(printOp)
 }
 
 func (c *CLIQuery) Run() error {
@@ -108,6 +115,25 @@ func (c *CLIInfo) Run() error {
 		_ = g.Close()
 	}(g)
 	return g.Info()
+}
+
+func (c *CLISample) Run() error {
+	gunisetDir, err := resolveGunisetDir()
+	if err != nil {
+		return err
+	}
+	g, err := NewGUniSetFromDir(gunisetDir, os.Stdout, c.Set)
+	if err != nil {
+		return err
+	}
+	defer func(g *GUniSet) {
+		_ = g.Close()
+	}(g)
+	printOp, ok := StrToSetPrintOps[c.Filter]
+	if !ok {
+		return fmt.Errorf("unknown filter %q\n", c.Filter)
+	}
+	return g.RunAndSampling(printOp, c.Limit)
 }
 
 func main() {
