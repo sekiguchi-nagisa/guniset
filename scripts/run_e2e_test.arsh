@@ -17,10 +17,10 @@ for target in $targets {
         $count++
         let golden = $test_case.replace(".test", ".golden")
         test -f $golden || { echo 1>&2 not founnd: $golden; exit 1; }
-        let op = "$(< $test_case)"
+        let op = "$(cat $test_case)"
         echo run: $test_case
         var ret = "$(call $bin generate --filter=$opt -- $op)"
-        var expect = "$(< $golden)"
+        var expect = "$(cat $golden)"
         diff <(printf '%s\n' $expect) <(printf '%s\n' $ret) || { $failed.add($test_case); echo failed: $test_case; }
     }
 }
