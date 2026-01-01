@@ -28,7 +28,7 @@ type EvalContext struct {
 	EawMap  UniSetMap[EastAsianWidth]
 }
 
-func NewEvalContext(unicodeData io.Reader, eastAsianWidth io.Reader) (*EvalContext, error) {
+func NewEvalContext(unicodeData io.ReadCloser, eastAsianWidth io.ReadCloser) (*EvalContext, error) {
 	catMap, err := LoadGeneralCategoryMap(unicodeData)
 	if err != nil {
 		return nil, err
@@ -133,7 +133,11 @@ func parseEntry(line string) (runeRange set.RuneRange, property string, err erro
 	return
 }
 
-func LoadGeneralCategoryMap(reader io.Reader) (setMap UniSetMap[GeneralCategory], e error) {
+func LoadGeneralCategoryMap(reader io.ReadCloser) (setMap UniSetMap[GeneralCategory], e error) {
+	defer func(reader io.ReadCloser) {
+		_ = reader.Close()
+	}(reader)
+
 	builderMap := map[GeneralCategory]*set.UniSetBuilder{}
 	for cate := range EachGeneralCategory {
 		builderMap[cate] = &set.UniSetBuilder{}
@@ -181,7 +185,11 @@ func LoadGeneralCategoryMap(reader io.Reader) (setMap UniSetMap[GeneralCategory]
 	return
 }
 
-func LoadEastAsianWidthMap(reader io.Reader) (setMap UniSetMap[EastAsianWidth], e error) {
+func LoadEastAsianWidthMap(reader io.ReadCloser) (setMap UniSetMap[EastAsianWidth], e error) {
+	defer func(reader io.ReadCloser) {
+		_ = reader.Close()
+	}(reader)
+
 	builderMap := map[EastAsianWidth]*set.UniSetBuilder{}
 	for eaw := range EachEastAsianWidth {
 		if eaw == EAW_N {

@@ -49,21 +49,20 @@ func getVersion() string {
 	}
 }
 
-func resolveGUNISET_DIR() (string, error) {
+func resolveGunisetDir() (string, error) {
 	gunisetDir := os.Getenv("GUNISET_DIR")
 	if gunisetDir == "" {
-		dir, err := os.Getwd()
-		if err != nil {
-			err = fmt.Errorf("cannot get current directory: %v", err)
-			return "", err
-		}
-		gunisetDir = dir
+		gunisetDir = "."
+	}
+	_, err := os.Stat(gunisetDir)
+	if err != nil {
+		return "", fmt.Errorf("cannot resolve GUNISET_DIR: %v", err)
 	}
 	return gunisetDir, nil
 }
 
 func (c *CLIGen) Run() error {
-	gunisetDir, err := resolveGUNISET_DIR()
+	gunisetDir, err := resolveGunisetDir()
 	if err != nil {
 		return err
 	}
@@ -82,7 +81,7 @@ func (c *CLIGen) Run() error {
 }
 
 func (c *CLIQuery) Run() error {
-	gunisetDir, err := resolveGUNISET_DIR()
+	gunisetDir, err := resolveGunisetDir()
 	if err != nil {
 		return err
 	}
@@ -97,7 +96,7 @@ func (c *CLIQuery) Run() error {
 }
 
 func (c *CLIInfo) Run() error {
-	gunisetDir, err := resolveGUNISET_DIR()
+	gunisetDir, err := resolveGunisetDir()
 	if err != nil {
 		return err
 	}
