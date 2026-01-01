@@ -2,20 +2,29 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"runtime/debug"
 
 	"github.com/alecthomas/kong"
 )
 
+type CLIGen struct {
+	Set    string `arg:"" required:"" help:"Specify set operation"`
+	Filter string `optional:"" help:"Filter output (all: include all, bmp: only bmp, non-bmp: exclude bmp)" enum:"all,,bmp,non-bmp" default:"all"`
+}
+
+type CLIQuery struct {
+	CodePoint string `arg:"" required:"" help:"Specify code point to query"`
+}
+
+type CLIInfo struct {
+}
+
 var CLI struct {
-	Version kong.VersionFlag `short:"v" help:"Show version information"`
-	Output  string           `short:"o" help:"Set output file (default stdout)"`
-	Set     string           `arg:"" required:"" help:"Specify set operation"`
-	Filter  string           `optional:"" help:"Filter output (all: include all, bmp: only bmp, non-bmp: exclude bmp)" enum:"all,,bmp,non-bmp" default:"all"`
-	Query   bool             `short:"q" optional:"" help:"Query code point property"`
-	Info    bool             `short:"i" optional:"" help:"Show information about Unicode database"`
+	Version  kong.VersionFlag `short:"v" help:"Show version information"`
+	Generate CLIGen           `cmd:"" help:"Generate Unicode set"`
+	Query    CLIQuery         `cmd:"" help:"Query code point property"`
+	Info     CLIInfo          `cmd:"" help:"Show information about Unicode database"`
 }
 
 var version = "" // for version embedding (specified like "-X main.version=v0.1.0")
@@ -40,60 +49,73 @@ func getVersion() string {
 	}
 }
 
-func main() {
-	kong.Parse(&CLI, kong.UsageOnError(), kong.Vars{"version": getVersion()})
+func resolveGUNISET_DIR() (string, error) {
 	gunisetDir := os.Getenv("GUNISET_DIR")
 	if gunisetDir == "" {
 		dir, err := os.Getwd()
 		if err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "cannot get current directory: %v\n", err)
-			os.Exit(1)
+			err = fmt.Errorf("cannot get current directory: %v", err)
+			return "", err
 		}
 		gunisetDir = dir
 	}
-	var writer io.Writer = os.Stdout
-	if CLI.Output != "" {
-		w, err := os.Create(CLI.Output)
-		if err != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "cannot open output file: %v\n", err)
-			os.Exit(1)
-		}
-		writer = w
-	}
-	g, err := NewGUniSetFromDir(gunisetDir, writer, CLI.Set)
+	return gunisetDir, nil
+}
+
+func (c *CLIGen) Run() error {
+	gunisetDir, err := resolveGUNISET_DIR()
 	if err != nil {
-		_, _ = fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		return err
+	}
+	g, err := NewGUniSetFromDir(gunisetDir, os.Stdout, c.Set)
+	if err != nil {
+		return err
 	}
 	defer func(g *GUniSet) {
 		_ = g.Close()
 	}(g)
-
-	if CLI.Info {
-		err = g.Info()
-		if err != nil {
-			_, _ = fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
-		}
-		return
-	}
-	if CLI.Query {
-		err = g.Query()
-		if err != nil {
-			_, _ = fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
-		}
-		return
-	}
-
-	printOp, ok := StrToSetPrintOps[CLI.Filter]
+	printOp, ok := StrToSetPrintOps[c.Filter]
 	if !ok {
-		_, _ = fmt.Fprintf(os.Stderr, "unknown filter %q\n", CLI.Filter)
-		os.Exit(1)
+		return fmt.Errorf("unknown filter %q\n", c.Filter)
 	}
-	err = g.Run(printOp)
+	return g.Run(printOp)
+}
+
+func (c *CLIQuery) Run() error {
+	gunisetDir, err := resolveGUNISET_DIR()
 	if err != nil {
-		_, _ = fmt.Fprintln(os.Stderr, err)
+		return err
+	}
+	g, err := NewGUniSetFromDir(gunisetDir, os.Stdout, c.CodePoint)
+	if err != nil {
+		return err
+	}
+	defer func(g *GUniSet) {
+		_ = g.Close()
+	}(g)
+	return g.Query()
+}
+
+func (c *CLIInfo) Run() error {
+	gunisetDir, err := resolveGUNISET_DIR()
+	if err != nil {
+		return err
+	}
+	g, err := NewGUniSetFromDir(gunisetDir, os.Stdout, "")
+	if err != nil {
+		return err
+	}
+	defer func(g *GUniSet) {
+		_ = g.Close()
+	}(g)
+	return g.Info()
+}
+
+func main() {
+	ctx := kong.Parse(&CLI, kong.UsageOnError(), kong.Vars{"version": getVersion()})
+	err := ctx.Run()
+	if err != nil {
+		_, _ = fmt.Fprintln(os.Stderr, err.Error())
 		os.Exit(1)
 	}
 }
