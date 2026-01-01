@@ -104,7 +104,7 @@ func runGoldenTest(t *testing.T, baseName string, filterOp SetFilterOp) {
 			defer func(g *GUniSet) {
 				_ = g.Close()
 			}(g)
-			err = g.Run(filterOp)
+			err = g.RunAndPrint(filterOp)
 			if err != nil {
 				t.Fatal(err)
 			}
