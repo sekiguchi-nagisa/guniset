@@ -63,7 +63,7 @@ func EachGeneralCategoryAll(yield func(GeneralCategory) bool) {
 	}
 }
 
-var longNameSet = map[GeneralCategory]string{
+var generalCategoryToLong = map[GeneralCategory]string{
 	CAT_Lu: "Uppercase_Letter",
 	CAT_Ll: "Lowercase_Letter",
 	CAT_Lt: "Titlecase_Letter",
@@ -105,7 +105,7 @@ var longNameSet = map[GeneralCategory]string{
 }
 
 func (c GeneralCategory) LongName() string {
-	return longNameSet[c]
+	return generalCategoryToLong[c]
 }
 
 var abbrToGeneralCategory map[string]GeneralCategory
@@ -169,17 +169,39 @@ func EachEastAsianWidth(yield func(EastAsianWidth) bool) {
 	}
 }
 
-var strToEastAsianWidth map[string]EastAsianWidth
+var eastAsianWidthToLong = map[EastAsianWidth]string{
+	EAW_W:  "Wide",
+	EAW_F:  "Fullwidth",
+	EAW_A:  "Ambiguous",
+	EAW_N:  "Neutral",
+	EAW_Na: "Narrow",
+	EAW_H:  "Halfwidth",
+}
+
+func (w EastAsianWidth) LongName() string {
+	return eastAsianWidthToLong[w]
+}
+
+var abbrToEastAsianWidth map[string]EastAsianWidth
+
+var longToEastAsianWidth map[string]EastAsianWidth
 
 func init() {
-	strToEastAsianWidth = make(map[string]EastAsianWidth)
+	abbrToEastAsianWidth = make(map[string]EastAsianWidth)
 	for eaw := range EachEastAsianWidth {
-		strToEastAsianWidth[eaw.String()] = eaw
+		abbrToEastAsianWidth[eaw.String()] = eaw
+	}
+	longToEastAsianWidth = make(map[string]EastAsianWidth)
+	for eaw := range EachEastAsianWidth {
+		longToEastAsianWidth[eaw.LongName()] = eaw
 	}
 }
 
 func ParseEastAsianWidth(s string) (EastAsianWidth, error) {
-	if c, ok := strToEastAsianWidth[s]; ok {
+	if c, ok := abbrToEastAsianWidth[s]; ok {
+		return c, nil
+	}
+	if c, ok := longToEastAsianWidth[s]; ok {
 		return c, nil
 	}
 	return EastAsianWidth(0), fmt.Errorf("unknown east asian width: %s", s)
