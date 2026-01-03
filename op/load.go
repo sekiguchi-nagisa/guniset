@@ -9,16 +9,16 @@ import (
 	"github.com/sekiguchi-nagisa/guniset/set"
 )
 
-type DBInfo struct {
+type DataHeader struct {
 	Filename string
 	Created  string
 }
 
-type DBInfoList struct {
-	List []DBInfo
+type DataHeaders struct {
+	List []DataHeader
 }
 
-func (d *DBInfoList) Print(writer io.Writer) error {
+func (d *DataHeaders) Print(writer io.Writer) error {
 	for _, info := range d.List {
 		_, err := fmt.Fprintf(writer, "%s\n%s\n", info.Filename, info.Created)
 		if err != nil {
@@ -31,25 +31,25 @@ func (d *DBInfoList) Print(writer io.Writer) error {
 type UniSetMap[T comparable] = map[T]*set.UniSet
 
 type EvalContext struct {
-	DBInfoList DBInfoList
-	CateMap    UniSetMap[GeneralCategory]
-	EawMap     UniSetMap[EastAsianWidth]
+	Headers DataHeaders
+	CateMap UniSetMap[GeneralCategory]
+	EawMap  UniSetMap[EastAsianWidth]
 }
 
 func NewEvalContext(unicodeData io.ReadCloser, eastAsianWidth io.ReadCloser) (*EvalContext, error) {
-	dbInfo := DBInfoList{}
-	catMap, err := LoadGeneralCategoryMap(unicodeData, &dbInfo)
+	headers := DataHeaders{}
+	catMap, err := LoadGeneralCategoryMap(unicodeData, &headers)
 	if err != nil {
 		return nil, err
 	}
-	eawMap, err := LoadEastAsianWidthMap(eastAsianWidth, &dbInfo)
+	eawMap, err := LoadEastAsianWidthMap(eastAsianWidth, &headers)
 	if err != nil {
 		return nil, err
 	}
 	return &EvalContext{
-		DBInfoList: dbInfo,
-		CateMap:    catMap,
-		EawMap:     eawMap,
+		Headers: headers,
+		CateMap: catMap,
+		EawMap:  eawMap,
 	}, nil
 }
 
@@ -92,34 +92,35 @@ func (e *EvalContext) Query(r rune, writer io.Writer) error {
 	return err
 }
 
-type LineReader struct {
+type DataLoader struct {
 	name    string
 	scanner *bufio.Scanner
 	lineno  int
+	header  DataHeader
 }
 
-func NewLineReader(name string, reader io.Reader) LineReader {
-	return LineReader{name: name, scanner: bufio.NewScanner(reader), lineno: 0}
+func NewDataLoader(name string, reader io.Reader) DataLoader {
+	return DataLoader{name: name, scanner: bufio.NewScanner(reader), lineno: 0}
 }
 
-func (lr *LineReader) next() bool {
-	ok := lr.scanner.Scan()
+func (d *DataLoader) next() bool {
+	ok := d.scanner.Scan()
 	if ok {
-		lr.lineno++
+		d.lineno++
 	}
 	return ok
 }
 
-func (lr *LineReader) line() string {
-	return lr.scanner.Text()
+func (d *DataLoader) line() string {
+	return d.scanner.Text()
 }
 
-func (lr *LineReader) err() error {
-	return lr.scanner.Err()
+func (d *DataLoader) err() error {
+	return d.scanner.Err()
 }
 
-func (lr *LineReader) formatErr(e error) error {
-	return fmt.Errorf("%s:%d: [load error] %s", lr.name, lr.lineno, e.Error())
+func (d *DataLoader) formatErr(e error) error {
+	return fmt.Errorf("%s:%d: [load error] %s", d.name, d.lineno, e.Error())
 }
 
 func parseEntry(line string) (runeRange set.RuneRange, property string, err error) {
@@ -143,48 +144,64 @@ func parseEntry(line string) (runeRange set.RuneRange, property string, err erro
 	return
 }
 
-func LoadGeneralCategoryMap(reader io.ReadCloser, dbInfoList *DBInfoList) (setMap UniSetMap[GeneralCategory], e error) {
+func (d *DataLoader) Load(reader io.ReadCloser, callback func(string) error) error {
 	defer func(reader io.ReadCloser) {
 		_ = reader.Close()
 	}(reader)
-
-	builderMap := map[GeneralCategory]*set.UniSetBuilder{}
-	for cate := range EachGeneralCategory {
-		builderMap[cate] = &set.UniSetBuilder{}
-	}
-	lr := NewLineReader("DerivedGeneralCategory.txt", reader)
-	info := DBInfo{}
-	for lr.next() {
-		line := lr.line()
-		if lr.lineno == 1 && strings.HasPrefix(line, "#") {
-			info.Filename = strings.TrimPrefix(line, "# ")
+	for d.next() {
+		line := d.line()
+		if d.lineno == 1 && strings.HasPrefix(line, "#") {
+			d.header.Filename = strings.TrimPrefix(line, "# ")
 			continue
 		}
-		if lr.lineno == 2 && strings.HasPrefix(line, "#") {
-			info.Created = strings.TrimPrefix(line, "# ")
+		if d.lineno == 2 && strings.HasPrefix(line, "#") {
+			d.header.Created = strings.TrimPrefix(line, "# ")
 			continue
 		}
 		if strings.HasPrefix(line, "#") || line == "" {
 			continue
 		}
-
 		// parse entry
+		err := callback(line)
+		if err != nil {
+			return d.formatErr(err)
+		}
+	}
+	err := d.err()
+	if err != nil {
+		return d.formatErr(err)
+	}
+	return nil
+}
+
+func (d *DataLoader) LoadProperties(reader io.ReadCloser, callback func(set.RuneRange, string) error) error {
+	return d.Load(reader, func(line string) error {
 		runeRange, property, err := parseEntry(line)
 		if err != nil {
-			e = lr.formatErr(err)
-			return
+			return err
 		}
+		return callback(runeRange, property)
+	})
+}
+
+func LoadGeneralCategoryMap(reader io.ReadCloser, dbInfoList *DataHeaders) (setMap UniSetMap[GeneralCategory], e error) {
+	builderMap := map[GeneralCategory]*set.UniSetBuilder{}
+	for cate := range EachGeneralCategory {
+		builderMap[cate] = &set.UniSetBuilder{}
+	}
+
+	// load
+	loader := NewDataLoader("DerivedGeneralCategory.txt", reader)
+	err := loader.LoadProperties(reader, func(runeRange set.RuneRange, property string) error {
 		cate, err := ParseGeneralCategory(property)
 		if err != nil {
-			e = lr.formatErr(err)
-			return
+			return err
 		}
 		builderMap[cate].AddRange(runeRange)
-	}
-	err := lr.err()
+		return nil
+	})
 	if err != nil {
-		e = lr.formatErr(err)
-		return
+		return nil, err
 	}
 
 	// build
@@ -193,15 +210,11 @@ func LoadGeneralCategoryMap(reader io.ReadCloser, dbInfoList *DBInfoList) (setMa
 		tmp := builder.Build()
 		setMap[cate] = &tmp
 	}
-	dbInfoList.List = append(dbInfoList.List, info)
+	dbInfoList.List = append(dbInfoList.List, loader.header)
 	return
 }
 
-func LoadEastAsianWidthMap(reader io.ReadCloser, dbInfoList *DBInfoList) (setMap UniSetMap[EastAsianWidth], e error) {
-	defer func(reader io.ReadCloser) {
-		_ = reader.Close()
-	}(reader)
-
+func LoadEastAsianWidthMap(reader io.ReadCloser, dbInfoList *DataHeaders) (setMap UniSetMap[EastAsianWidth], e error) {
 	builderMap := map[EastAsianWidth]*set.UniSetBuilder{}
 	for eaw := range EachEastAsianWidth {
 		if eaw == EAW_N {
@@ -209,42 +222,21 @@ func LoadEastAsianWidthMap(reader io.ReadCloser, dbInfoList *DBInfoList) (setMap
 		}
 		builderMap[eaw] = &set.UniSetBuilder{}
 	}
-	lr := NewLineReader("EastAsianWidth.txt", reader)
-	info := DBInfo{}
-	for lr.next() {
-		line := lr.line()
-		if lr.lineno == 1 && strings.HasPrefix(line, "#") {
-			info.Filename = strings.TrimPrefix(line, "# ")
-			continue
-		}
-		if lr.lineno == 2 && strings.HasPrefix(line, "#") {
-			info.Created = strings.TrimPrefix(line, "# ")
-			continue
-		}
-		if strings.HasPrefix(line, "#") || line == "" {
-			continue
-		}
 
-		// parse entry
-		runeRange, property, err := parseEntry(line)
-		if err != nil {
-			e = lr.formatErr(err)
-			return
-		}
+	// load
+	loader := NewDataLoader("EastAsianWidth.txt", reader)
+	err := loader.LoadProperties(reader, func(runeRange set.RuneRange, property string) error {
 		eaw, err := ParseEastAsianWidth(property)
 		if err != nil {
-			e = lr.formatErr(err)
-			return
+			return err
 		}
-		if eaw == EAW_N {
-			continue // skip (fill N later)
+		if eaw != EAW_N { // skip N (fill later)
+			builderMap[eaw].AddRange(runeRange)
 		}
-		builderMap[eaw].AddRange(runeRange)
-	}
-	err := lr.err()
+		return nil
+	})
 	if err != nil {
-		e = lr.formatErr(err)
-		return
+		return nil, err
 	}
 
 	// build
@@ -253,6 +245,6 @@ func LoadEastAsianWidthMap(reader io.ReadCloser, dbInfoList *DBInfoList) (setMap
 		tmp := builder.Build()
 		setMap[cate] = &tmp
 	}
-	dbInfoList.List = append(dbInfoList.List, info)
+	dbInfoList.List = append(dbInfoList.List, loader.header)
 	return
 }

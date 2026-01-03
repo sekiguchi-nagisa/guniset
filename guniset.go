@@ -125,7 +125,7 @@ func (g *GUniSet) Info() error {
 	if err != nil {
 		return err
 	}
-	return ctx.DBInfoList.Print(g.Writer)
+	return ctx.Headers.Print(g.Writer)
 }
 
 func (g *GUniSet) EnumerateProperty() error {
