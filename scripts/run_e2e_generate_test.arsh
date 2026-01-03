@@ -8,6 +8,7 @@ let bin = $1.realpath()
 cd $SCRIPT_DIR/..  # move to project top
 
 var targets = @(./test/generate/*/)
+assert ! $targets.empty()
 
 exit $run_e2e($targets, function(op: String, target: String)=> {
     let opt = $target.endsWith("_bmp") ? "bmp" : $target.endsWith("_nonbmp") ? "non-bmp" : "all"

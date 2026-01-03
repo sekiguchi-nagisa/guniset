@@ -8,5 +8,6 @@ let bin = $1.realpath()
 cd $SCRIPT_DIR/..  # move to project top
 
 var targets = @(./test/enum/*/)
+assert ! $targets.empty()
 
 exit $run_e2e($targets, function(op: String, _)=> "$(call $bin enum -- $op | LANG=C sort)")
