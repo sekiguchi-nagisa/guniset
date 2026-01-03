@@ -125,15 +125,7 @@ func (g *GUniSet) Info() error {
 	if err != nil {
 		return err
 	}
-	err = ctx.CateMap.PrintHeader(g.Writer)
-	if err != nil {
-		return err
-	}
-	err = ctx.EawMap.PrintHeader(g.Writer)
-	if err != nil {
-		return err
-	}
-	return nil
+	return ctx.DBInfoList.Print(g.Writer)
 }
 
 func (g *GUniSet) EnumerateProperty() error {

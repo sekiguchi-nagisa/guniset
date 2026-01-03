@@ -9,42 +9,52 @@ import (
 	"github.com/sekiguchi-nagisa/guniset/set"
 )
 
-type UniSetMap[T comparable] struct {
-	// extracted from a database header
+type DBInfo struct {
 	Filename string
 	Created  string
-
-	// generated from actual database content
-	Map map[T]*set.UniSet
 }
 
-func (t *UniSetMap[T]) PrintHeader(writer io.Writer) error {
-	_, err := writer.Write([]byte(fmt.Sprintf("%s\n%s\n", t.Filename, t.Created)))
-	return err
+type DBInfoList struct {
+	List []DBInfo
 }
+
+func (d *DBInfoList) Print(writer io.Writer) error {
+	for _, info := range d.List {
+		_, err := fmt.Fprintf(writer, "%s\n%s\n", info.Filename, info.Created)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+type UniSetMap[T comparable] = map[T]*set.UniSet
 
 type EvalContext struct {
-	CateMap UniSetMap[GeneralCategory]
-	EawMap  UniSetMap[EastAsianWidth]
+	DBInfoList DBInfoList
+	CateMap    UniSetMap[GeneralCategory]
+	EawMap     UniSetMap[EastAsianWidth]
 }
 
 func NewEvalContext(unicodeData io.ReadCloser, eastAsianWidth io.ReadCloser) (*EvalContext, error) {
-	catMap, err := LoadGeneralCategoryMap(unicodeData)
+	dbInfo := DBInfoList{}
+	catMap, err := LoadGeneralCategoryMap(unicodeData, &dbInfo)
 	if err != nil {
 		return nil, err
 	}
-	eawMap, err := LoadEastAsianWidthMap(eastAsianWidth)
+	eawMap, err := LoadEastAsianWidthMap(eastAsianWidth, &dbInfo)
 	if err != nil {
 		return nil, err
 	}
 	return &EvalContext{
-		CateMap: catMap,
-		EawMap:  eawMap,
+		DBInfoList: dbInfo,
+		CateMap:    catMap,
+		EawMap:     eawMap,
 	}, nil
 }
 
 func (e *EvalContext) FillEawN() *set.UniSet {
-	eawSet := e.EawMap.Map[EAW_N]
+	eawSet := e.EawMap[EAW_N]
 	if eawSet != nil {
 		return eawSet
 	}
@@ -52,25 +62,25 @@ func (e *EvalContext) FillEawN() *set.UniSet {
 	builder := set.UniSetBuilder{}
 	for eaw := range EachEastAsianWidth {
 		if eaw != EAW_N {
-			builder.AddSet(e.EawMap.Map[eaw])
+			builder.AddSet(e.EawMap[eaw])
 		}
 	}
 	removing := builder.Build()
 	tmpSet.RemoveSet(&removing)
-	e.EawMap.Map[EAW_N] = &tmpSet
-	return e.EawMap.Map[EAW_N]
+	e.EawMap[EAW_N] = &tmpSet
+	return e.EawMap[EAW_N]
 }
 
 func (e *EvalContext) Query(r rune, writer io.Writer) error {
 	cat := CAT_Cn
 	eaw := EAW_N
-	for cc, uniSet := range e.CateMap.Map {
+	for cc, uniSet := range e.CateMap {
 		if uniSet.Find(r) {
 			cat = cc
 			break
 		}
 	}
-	for e, uniSet := range e.EawMap.Map {
+	for e, uniSet := range e.EawMap {
 		if uniSet.Find(r) {
 			eaw = e
 			break
@@ -133,7 +143,7 @@ func parseEntry(line string) (runeRange set.RuneRange, property string, err erro
 	return
 }
 
-func LoadGeneralCategoryMap(reader io.ReadCloser) (setMap UniSetMap[GeneralCategory], e error) {
+func LoadGeneralCategoryMap(reader io.ReadCloser, dbInfoList *DBInfoList) (setMap UniSetMap[GeneralCategory], e error) {
 	defer func(reader io.ReadCloser) {
 		_ = reader.Close()
 	}(reader)
@@ -143,14 +153,15 @@ func LoadGeneralCategoryMap(reader io.ReadCloser) (setMap UniSetMap[GeneralCateg
 		builderMap[cate] = &set.UniSetBuilder{}
 	}
 	lr := NewLineReader("DerivedGeneralCategory.txt", reader)
+	info := DBInfo{}
 	for lr.next() {
 		line := lr.line()
 		if lr.lineno == 1 && strings.HasPrefix(line, "#") {
-			setMap.Filename = strings.TrimPrefix(line, "# ")
+			info.Filename = strings.TrimPrefix(line, "# ")
 			continue
 		}
 		if lr.lineno == 2 && strings.HasPrefix(line, "#") {
-			setMap.Created = strings.TrimPrefix(line, "# ")
+			info.Created = strings.TrimPrefix(line, "# ")
 			continue
 		}
 		if strings.HasPrefix(line, "#") || line == "" {
@@ -177,15 +188,16 @@ func LoadGeneralCategoryMap(reader io.ReadCloser) (setMap UniSetMap[GeneralCateg
 	}
 
 	// build
-	setMap.Map = map[GeneralCategory]*set.UniSet{}
+	setMap = map[GeneralCategory]*set.UniSet{}
 	for cate, builder := range builderMap {
 		tmp := builder.Build()
-		setMap.Map[cate] = &tmp
+		setMap[cate] = &tmp
 	}
+	dbInfoList.List = append(dbInfoList.List, info)
 	return
 }
 
-func LoadEastAsianWidthMap(reader io.ReadCloser) (setMap UniSetMap[EastAsianWidth], e error) {
+func LoadEastAsianWidthMap(reader io.ReadCloser, dbInfoList *DBInfoList) (setMap UniSetMap[EastAsianWidth], e error) {
 	defer func(reader io.ReadCloser) {
 		_ = reader.Close()
 	}(reader)
@@ -198,14 +210,15 @@ func LoadEastAsianWidthMap(reader io.ReadCloser) (setMap UniSetMap[EastAsianWidt
 		builderMap[eaw] = &set.UniSetBuilder{}
 	}
 	lr := NewLineReader("EastAsianWidth.txt", reader)
+	info := DBInfo{}
 	for lr.next() {
 		line := lr.line()
 		if lr.lineno == 1 && strings.HasPrefix(line, "#") {
-			setMap.Filename = strings.TrimPrefix(line, "# ")
+			info.Filename = strings.TrimPrefix(line, "# ")
 			continue
 		}
 		if lr.lineno == 2 && strings.HasPrefix(line, "#") {
-			setMap.Created = strings.TrimPrefix(line, "# ")
+			info.Created = strings.TrimPrefix(line, "# ")
 			continue
 		}
 		if strings.HasPrefix(line, "#") || line == "" {
@@ -235,10 +248,11 @@ func LoadEastAsianWidthMap(reader io.ReadCloser) (setMap UniSetMap[EastAsianWidt
 	}
 
 	// build
-	setMap.Map = map[EastAsianWidth]*set.UniSet{}
+	setMap = map[EastAsianWidth]*set.UniSet{}
 	for cate, builder := range builderMap {
 		tmp := builder.Build()
-		setMap.Map[cate] = &tmp
+		setMap[cate] = &tmp
 	}
+	dbInfoList.List = append(dbInfoList.List, info)
 	return
 }
