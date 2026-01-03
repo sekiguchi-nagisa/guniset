@@ -120,6 +120,10 @@ func TestPrintAll(t *testing.T) {
 	runGoldenTest(t, "unicode16", SetPrintAll)
 }
 
+func TestPrintLong(t *testing.T) {
+	runGoldenTest(t, "unicode16_long", SetPrintAll)
+}
+
 func TestPrintBMP(t *testing.T) {
 	runGoldenTest(t, "unicode16_bmp", SetPrintBMP)
 }
