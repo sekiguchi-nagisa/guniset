@@ -35,11 +35,11 @@ func NewGeneralCategoryNode(properties []GeneralCategory) *GeneralCategoryNode {
 func (g *GeneralCategoryNode) Eval(context *EvalContext) set.UniSet {
 	builder := set.UniSetBuilder{}
 	for _, property := range g.properties {
-		if s, ok := context.CateMap.Map[property]; ok {
+		if s, ok := context.CateMap[property]; ok {
 			builder.AddSet(s)
 		} else if comb := property.Combinations(); len(comb) > 0 {
 			for _, c := range comb {
-				if s, ok := context.CateMap.Map[c]; ok {
+				if s, ok := context.CateMap[c]; ok {
 					builder.AddSet(s)
 				}
 			}
@@ -63,7 +63,7 @@ func NewEastAsianWidthNode(properties []EastAsianWidth) *EastAsianWidthNode {
 func (e *EastAsianWidthNode) Eval(context *EvalContext) set.UniSet {
 	builder := set.UniSetBuilder{}
 	for _, property := range e.properties {
-		if s, ok := context.EawMap.Map[property]; ok {
+		if s, ok := context.EawMap[property]; ok {
 			builder.AddSet(s)
 		} else if property == EAW_N {
 			builder.AddSet(context.FillEawN())
