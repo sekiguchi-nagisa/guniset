@@ -136,22 +136,6 @@ func (g *GUniSet) Info() error {
 	return nil
 }
 
-func (g *GUniSet) EnumerateProperty() error {
-	if op.IsGeneralCategoryPrefix(g.SetOperation) {
-		for cat := range op.EachGeneralCategoryAll {
-			_, _ = fmt.Fprintf(g.Writer, "%s, %s\n", cat, cat.LongName())
-		}
-		return nil
-	}
-	if op.IsEastAsianWidthPrefix(g.SetOperation) {
-		for eaw := range op.EachEastAsianWidth {
-			_, _ = fmt.Fprintf(g.Writer, "%s, %s\n", eaw, eaw.LongName())
-		}
-		return nil
-	}
-	return fmt.Errorf("unknown property: %s", g.SetOperation)
-}
-
 func (g *GUniSet) Close() error {
 	err1 := g.GeneralCategory.Close()
 	err2 := g.EastAsianWidth.Close()

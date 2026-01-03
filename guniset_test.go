@@ -73,7 +73,7 @@ func runGoldenTest(t *testing.T, baseName string, filterOp SetFilterOp) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	targetDir := path.Join(wd, "test/generate", baseName)
+	targetDir := path.Join(wd, "test", baseName)
 	cases, err := filepath.Glob(path.Join(targetDir, "*.test"))
 	if err != nil {
 		t.Fatal(err)
@@ -118,10 +118,6 @@ func runGoldenTest(t *testing.T, baseName string, filterOp SetFilterOp) {
 
 func TestPrintAll(t *testing.T) {
 	runGoldenTest(t, "unicode16", SetPrintAll)
-}
-
-func TestPrintLong(t *testing.T) {
-	runGoldenTest(t, "unicode16_long", SetPrintAll)
 }
 
 func TestPrintBMP(t *testing.T) {

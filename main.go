@@ -26,17 +26,12 @@ type CLISample struct {
 	Limit  int    `optional:"" help:"Limit sampling count" default:"5"`
 }
 
-type CLIEnum struct {
-	Property string `arg:"" required:"" help:"Specify enumerating property"`
-}
-
 var CLI struct {
 	Version  kong.VersionFlag `short:"v" help:"Show version information"`
 	Generate CLIGen           `cmd:"" help:"Generate Unicode set"`
 	Query    CLIQuery         `cmd:"" help:"Query code point property"`
 	Info     CLIInfo          `cmd:"" help:"Show information about Unicode database"`
 	Sample   CLISample        `cmd:"" help:"Sample Unicode code points"`
-	Enum     CLIEnum          `cmd:"" help:"Enumerate Unicode properties"`
 }
 
 var version = "" // for version embedding (specified like "-X main.version=v0.1.0")
@@ -139,21 +134,6 @@ func (c *CLISample) Run() error {
 		return fmt.Errorf("unknown filter %q\n", c.Filter)
 	}
 	return g.RunAndSampling(printOp, c.Limit)
-}
-
-func (c *CLIEnum) Run() error {
-	gunisetDir, err := resolveGunisetDir()
-	if err != nil {
-		return err
-	}
-	g, err := NewGUniSetFromDir(gunisetDir, os.Stdout, c.Property)
-	if err != nil {
-		return err
-	}
-	defer func(g *GUniSet) {
-		_ = g.Close()
-	}(g)
-	return g.EnumerateProperty()
 }
 
 func main() {
