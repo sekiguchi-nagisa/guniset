@@ -37,6 +37,12 @@ func (g *GeneralCategoryNode) Eval(context *EvalContext) set.UniSet {
 	for _, property := range g.properties {
 		if s, ok := context.CateMap.Map[property]; ok {
 			builder.AddSet(s)
+		} else if comb := property.Combinations(); len(comb) > 0 {
+			for _, c := range comb {
+				if s, ok := context.CateMap.Map[c]; ok {
+					builder.AddSet(s)
+				}
+			}
 		}
 	}
 	return builder.Build()

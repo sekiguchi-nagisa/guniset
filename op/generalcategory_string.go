@@ -38,11 +38,19 @@ func _() {
 	_ = x[CAT_Cs-27]
 	_ = x[CAT_Co-28]
 	_ = x[CAT_Cn-29]
+	_ = x[CAT_LC-30]
+	_ = x[CAT_L-31]
+	_ = x[CAT_M-32]
+	_ = x[CAT_N-33]
+	_ = x[CAT_P-34]
+	_ = x[CAT_S-35]
+	_ = x[CAT_Z-36]
+	_ = x[CAT_C-37]
 }
 
-const _GeneralCategory_name = "LuLlLtLmLoMnMcMeNdNlNoSmScSkSoPcPdPsPePiPfPoZsZlZpCcCfCsCoCn"
+const _GeneralCategory_name = "LuLlLtLmLoMnMcMeNdNlNoSmScSkSoPcPdPsPePiPfPoZsZlZpCcCfCsCoCnLCLMNPSZC"
 
-var _GeneralCategory_index = [...]uint8{0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60}
+var _GeneralCategory_index = [...]uint8{0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62, 63, 64, 65, 66, 67, 68, 69}
 
 func (i GeneralCategory) String() string {
 	idx := int(i) - 0
