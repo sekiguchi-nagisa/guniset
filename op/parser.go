@@ -169,7 +169,7 @@ func (p *Parser) parsePrimary() Node {
 	switch curKind := p.fetch().kind; curKind {
 	case TokenId:
 		prefix := p.expect(TokenId)
-		if prefix.text == "cat" {
+		if prefix.text == "cat" || prefix.text == "gc" {
 			p.expect(TokenColon)
 			var properties []GeneralCategory
 			p.parsePropertySeq(func(s string) {
