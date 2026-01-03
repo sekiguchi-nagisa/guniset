@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/sekiguchi-nagisa/guniset/op"
 	"github.com/sekiguchi-nagisa/guniset/set"
@@ -26,11 +27,12 @@ var StrToSetPrintOps = map[string]SetFilterOp{
 }
 
 type GUniSet struct {
-	unicodeDir      string
-	GeneralCategory io.ReadCloser // DerivedGeneralCategory.txt
-	EastAsianWidth  io.ReadCloser // EastAsianWidth.txt
-	Writer          io.Writer     // for generated Unicode set string
-	SetOperation    string
+	unicodeDir           string
+	GeneralCategory      io.ReadCloser // DerivedGeneralCategory.txt
+	EastAsianWidth       io.ReadCloser // EastAsianWidth.txt
+	PropertyValueAliases io.ReadCloser // PropertyValueAliases.txt
+	Writer               io.Writer     // for generated Unicode set string
+	SetOperation         string
 }
 
 func NewGUniSetFromDir(unicodeDir string, writer io.Writer, setOperation string) (*GUniSet, error) {
@@ -42,12 +44,17 @@ func NewGUniSetFromDir(unicodeDir string, writer io.Writer, setOperation string)
 	if err != nil {
 		return nil, err
 	}
+	aliases, err := os.Open(path.Join(unicodeDir, "PropertyValueAliases.txt"))
+	if err != nil {
+		return nil, err
+	}
 	return &GUniSet{
-		unicodeDir:      unicodeDir,
-		GeneralCategory: generalCategory,
-		EastAsianWidth:  eastAsianWidth,
-		Writer:          writer,
-		SetOperation:    setOperation,
+		unicodeDir:           unicodeDir,
+		GeneralCategory:      generalCategory,
+		EastAsianWidth:       eastAsianWidth,
+		PropertyValueAliases: aliases,
+		Writer:               writer,
+		SetOperation:         setOperation,
 	}, nil
 }
 
@@ -61,12 +68,16 @@ func PrintUniSet(uniSet *set.UniSet, writer io.Writer) error {
 	return nil
 }
 
+func (g *GUniSet) prepare() (*op.EvalContext, error) {
+	return op.NewEvalContext(g.GeneralCategory, g.EastAsianWidth, g.PropertyValueAliases)
+}
+
 func (g *GUniSet) Run(filterOp SetFilterOp) (*set.UniSet, error) {
-	ctx, err := op.NewEvalContext(g.GeneralCategory, g.EastAsianWidth)
+	ctx, err := g.prepare()
 	if err != nil {
 		return nil, err
 	}
-	node, err := op.NewParser().Run([]byte(g.SetOperation))
+	node, err := op.NewParser(ctx.AliasMaps).Run([]byte(g.SetOperation))
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +120,7 @@ func (g *GUniSet) Query() error {
 	if err != nil {
 		return err
 	}
-	ctx, err := op.NewEvalContext(g.GeneralCategory, g.EastAsianWidth)
+	ctx, err := g.prepare()
 	if err != nil {
 		return err
 	}
@@ -117,7 +128,7 @@ func (g *GUniSet) Query() error {
 }
 
 func (g *GUniSet) Info() error {
-	ctx, err := op.NewEvalContext(g.GeneralCategory, g.EastAsianWidth)
+	ctx, err := g.prepare()
 	if err != nil {
 		return err
 	}
@@ -129,15 +140,21 @@ func (g *GUniSet) Info() error {
 }
 
 func (g *GUniSet) EnumerateProperty() error {
+	ctx, err := g.prepare()
+	if err != nil {
+		return err
+	}
 	if op.IsGeneralCategoryPrefix(g.SetOperation) {
 		for cat := range op.EachGeneralCategoryAll {
-			_, _ = fmt.Fprintf(g.Writer, "%s, %s\n", cat, cat.LongName())
+			long := strings.Join(ctx.AliasMaps[op.GeneralCategoryPrefix].Lookup(cat.String()), ", ")
+			_, _ = fmt.Fprintf(g.Writer, "%s, %s\n", cat, long)
 		}
 		return nil
 	}
 	if op.IsEastAsianWidthPrefix(g.SetOperation) {
 		for eaw := range op.EachEastAsianWidth {
-			_, _ = fmt.Fprintf(g.Writer, "%s, %s\n", eaw, eaw.LongName())
+			long := strings.Join(ctx.AliasMaps[op.EastAsianWidthPrefix].Lookup(eaw.String()), ", ")
+			_, _ = fmt.Fprintf(g.Writer, "%s, %s\n", eaw, long)
 		}
 		return nil
 	}

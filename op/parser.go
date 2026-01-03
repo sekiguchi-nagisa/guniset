@@ -72,13 +72,14 @@ Next:
 }
 
 type Parser struct {
-	tokens []Token
-	pos    int
-	err    error
+	aliasMaps AliasMaps
+	tokens    []Token
+	pos       int
+	err       error
 }
 
-func NewParser() *Parser {
-	return &Parser{}
+func NewParser(maps AliasMaps) *Parser {
+	return &Parser{aliasMaps: maps}
 }
 
 func syntaxErr(msg string) error {
@@ -173,7 +174,7 @@ func (p *Parser) parsePrimary() Node {
 			p.expect(TokenColon)
 			var properties []GeneralCategory
 			p.parsePropertySeq(func(s string) {
-				v, err := ParseGeneralCategory(s)
+				v, err := ParseGeneralCategory(s, p.aliasMaps[GeneralCategoryPrefix])
 				if err != nil {
 					p.error(err.Error())
 				}
@@ -184,7 +185,7 @@ func (p *Parser) parsePrimary() Node {
 			p.expect(TokenColon)
 			var properties []EastAsianWidth
 			p.parsePropertySeq(func(s string) {
-				v, err := ParseEastAsianWidth(s)
+				v, err := ParseEastAsianWidth(s, p.aliasMaps[EastAsianWidthPrefix])
 				if err != nil {
 					p.error(err.Error())
 				}

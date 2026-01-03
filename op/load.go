@@ -31,12 +31,13 @@ func (d *DataHeaders) Print(writer io.Writer) error {
 type UniSetMap[T comparable] = map[T]*set.UniSet
 
 type EvalContext struct {
-	Headers DataHeaders
-	CateMap UniSetMap[GeneralCategory]
-	EawMap  UniSetMap[EastAsianWidth]
+	Headers   DataHeaders
+	CateMap   UniSetMap[GeneralCategory]
+	EawMap    UniSetMap[EastAsianWidth]
+	AliasMaps AliasMaps
 }
 
-func NewEvalContext(unicodeData io.ReadCloser, eastAsianWidth io.ReadCloser) (*EvalContext, error) {
+func NewEvalContext(unicodeData io.ReadCloser, eastAsianWidth io.ReadCloser, aliases io.ReadCloser) (*EvalContext, error) {
 	headers := DataHeaders{}
 	catMap, err := LoadGeneralCategoryMap(unicodeData, &headers)
 	if err != nil {
@@ -46,10 +47,16 @@ func NewEvalContext(unicodeData io.ReadCloser, eastAsianWidth io.ReadCloser) (*E
 	if err != nil {
 		return nil, err
 	}
+	aliasMaps, err := LoadTargetAliasMap(aliases, &headers,
+		map[string]struct{}{GeneralCategoryPrefix: {}, EastAsianWidthPrefix: {}})
+	if err != nil {
+		return nil, err
+	}
 	return &EvalContext{
-		Headers: headers,
-		CateMap: catMap,
-		EawMap:  eawMap,
+		Headers:   headers,
+		CateMap:   catMap,
+		EawMap:    eawMap,
+		AliasMaps: aliasMaps,
 	}, nil
 }
 
@@ -193,7 +200,7 @@ func LoadGeneralCategoryMap(reader io.ReadCloser, dbInfoList *DataHeaders) (setM
 	// load
 	loader := NewDataLoader("DerivedGeneralCategory.txt", reader)
 	err := loader.LoadProperties(reader, func(runeRange set.RuneRange, property string) error {
-		cate, err := ParseGeneralCategory(property)
+		cate, err := ParseGeneralCategory(property, nil)
 		if err != nil {
 			return err
 		}
@@ -226,7 +233,7 @@ func LoadEastAsianWidthMap(reader io.ReadCloser, dbInfoList *DataHeaders) (setMa
 	// load
 	loader := NewDataLoader("EastAsianWidth.txt", reader)
 	err := loader.LoadProperties(reader, func(runeRange set.RuneRange, property string) error {
-		eaw, err := ParseEastAsianWidth(property)
+		eaw, err := ParseEastAsianWidth(property, nil)
 		if err != nil {
 			return err
 		}
@@ -247,4 +254,23 @@ func LoadEastAsianWidthMap(reader io.ReadCloser, dbInfoList *DataHeaders) (setMa
 	}
 	dbInfoList.List = append(dbInfoList.List, loader.header)
 	return
+}
+
+func LoadTargetAliasMap(reader io.ReadCloser, dbInfoList *DataHeaders, targets map[string]struct{}) (aliasMaps AliasMaps, e error) {
+	aliasMaps = AliasMaps{}
+	for target := range targets {
+		aliasMaps[target] = NewAliasMap(target)
+	}
+	loader := NewDataLoader("PropertyValueAliases.txt", reader)
+	err := loader.Load(reader, func(line string) error {
+		if ret, ok := ParseAliasEntry(line, targets); ok {
+			aliasMaps[ret.property].AddAll(ret.abbr, ret.longs)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	dbInfoList.List = append(dbInfoList.List, loader.header)
+	return aliasMaps, nil
 }

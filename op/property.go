@@ -6,12 +6,14 @@ import "fmt"
 
 type GeneralCategory int
 
-var generalCategoryPrefix = []string{
+const GeneralCategoryPrefix = "gc"
+
+var generalCategoryPrefixes = []string{
 	"cat", "gc",
 }
 
 func IsGeneralCategoryPrefix(s string) bool {
-	for _, prefix := range generalCategoryPrefix {
+	for _, prefix := range generalCategoryPrefixes {
 		if s == prefix {
 			return true
 		}
@@ -76,72 +78,25 @@ func EachGeneralCategoryAll(yield func(GeneralCategory) bool) {
 	}
 }
 
-var generalCategoryToLong = map[GeneralCategory]string{
-	CAT_Lu: "Uppercase_Letter",
-	CAT_Ll: "Lowercase_Letter",
-	CAT_Lt: "Titlecase_Letter",
-	CAT_LC: "Cased_Letter",
-	CAT_Lm: "Modifier_Letter",
-	CAT_Lo: "Other_Letter",
-	CAT_L:  "Letter",
-	CAT_Mn: "Nonspacing_Mark",
-	CAT_Mc: "Spacing_Mark",
-	CAT_Me: "Enclosing_Mark",
-	CAT_M:  "Mark",
-	CAT_Nd: "Decimal_Number",
-	CAT_Nl: "Letter_Number",
-	CAT_No: "Other_Number",
-	CAT_N:  "Number",
-	CAT_Pc: "Connector_Punctuation",
-	CAT_Pd: "Dash_Punctuation",
-	CAT_Ps: "Open_Punctuation",
-	CAT_Pe: "Close_Punctuation",
-	CAT_Pi: "Initial_Punctuation",
-	CAT_Pf: "Final_Punctuation",
-	CAT_Po: "Other_Punctuation",
-	CAT_P:  "Punctuation",
-	CAT_Sm: "Math_Symbol",
-	CAT_Sc: "Currency_Symbol",
-	CAT_Sk: "Modifier_Symbol",
-	CAT_So: "Other_Symbol",
-	CAT_S:  "Symbol",
-	CAT_Zs: "Space_Separator",
-	CAT_Zl: "Line_Separator",
-	CAT_Zp: "Paragraph_Separator",
-	CAT_Z:  "Separator",
-	CAT_Cc: "Control",
-	CAT_Cf: "Format",
-	CAT_Cs: "Surrogate",
-	CAT_Co: "Private_Use",
-	CAT_Cn: "Unassigned",
-	CAT_C:  "Other",
-}
-
-func (c GeneralCategory) LongName() string {
-	return generalCategoryToLong[c]
-}
-
 var abbrToGeneralCategory map[string]GeneralCategory
-
-var longToGeneralCategory map[string]GeneralCategory
 
 func init() {
 	abbrToGeneralCategory = make(map[string]GeneralCategory)
 	for cat := range EachGeneralCategoryAll {
 		abbrToGeneralCategory[cat.String()] = cat
 	}
-	longToGeneralCategory = make(map[string]GeneralCategory)
-	for cat := range EachGeneralCategoryAll {
-		longToGeneralCategory[cat.LongName()] = cat
-	}
 }
 
-func ParseGeneralCategory(s string) (GeneralCategory, error) {
+func ParseGeneralCategory(s string, aliasMap *AliasMap) (GeneralCategory, error) {
 	if c, ok := abbrToGeneralCategory[s]; ok {
 		return c, nil
 	}
-	if c, ok := longToGeneralCategory[s]; ok {
-		return c, nil
+	if aliasMap != nil {
+		if abbr := aliasMap.LookupAbbr(s); len(abbr) > 0 {
+			if c, ok := abbrToGeneralCategory[abbr]; ok {
+				return c, nil
+			}
+		}
 	}
 	return GeneralCategory(0), fmt.Errorf("unknown general category: %s", s)
 }
@@ -165,12 +120,14 @@ func (c GeneralCategory) Combinations() []GeneralCategory {
 
 type EastAsianWidth int
 
-var eastAsianWidthPrefix = []string{
+const EastAsianWidthPrefix = "ea"
+
+var eastAsianWidthPrefixes = []string{
 	"eaw", "ea",
 }
 
 func IsEastAsianWidthPrefix(s string) bool {
-	for _, prefix := range eastAsianWidthPrefix {
+	for _, prefix := range eastAsianWidthPrefixes {
 		if s == prefix {
 			return true
 		}
@@ -195,40 +152,25 @@ func EachEastAsianWidth(yield func(EastAsianWidth) bool) {
 	}
 }
 
-var eastAsianWidthToLong = map[EastAsianWidth]string{
-	EAW_W:  "Wide",
-	EAW_F:  "Fullwidth",
-	EAW_A:  "Ambiguous",
-	EAW_N:  "Neutral",
-	EAW_Na: "Narrow",
-	EAW_H:  "Halfwidth",
-}
-
-func (w EastAsianWidth) LongName() string {
-	return eastAsianWidthToLong[w]
-}
-
 var abbrToEastAsianWidth map[string]EastAsianWidth
-
-var longToEastAsianWidth map[string]EastAsianWidth
 
 func init() {
 	abbrToEastAsianWidth = make(map[string]EastAsianWidth)
 	for eaw := range EachEastAsianWidth {
 		abbrToEastAsianWidth[eaw.String()] = eaw
 	}
-	longToEastAsianWidth = make(map[string]EastAsianWidth)
-	for eaw := range EachEastAsianWidth {
-		longToEastAsianWidth[eaw.LongName()] = eaw
-	}
 }
 
-func ParseEastAsianWidth(s string) (EastAsianWidth, error) {
+func ParseEastAsianWidth(s string, aliasMap *AliasMap) (EastAsianWidth, error) {
 	if c, ok := abbrToEastAsianWidth[s]; ok {
 		return c, nil
 	}
-	if c, ok := longToEastAsianWidth[s]; ok {
-		return c, nil
+	if aliasMap != nil {
+		if abbr := aliasMap.LookupAbbr(s); len(abbr) > 0 {
+			if c, ok := abbrToEastAsianWidth[abbr]; ok {
+				return c, nil
+			}
+		}
 	}
 	return EastAsianWidth(0), fmt.Errorf("unknown east asian width: %s", s)
 }

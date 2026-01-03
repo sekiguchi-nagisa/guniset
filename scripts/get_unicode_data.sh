@@ -10,6 +10,9 @@ curl "https://www.unicode.org/Public/$REV/ucd/extracted/DerivedGeneralCategory.t
 curl "https://www.unicode.org/Public/$REV/ucd/EastAsianWidth.txt" \
   > ./unicode_dir/EastAsianWidth.txt || { echo failed; exit 1; }
 
+curl "https://www.unicode.org/Public/$REV/ucd/PropertyValueAliases.txt" \
+  > ./unicode_dir/PropertyValueAliases.txt || { echo failed; exit 1; }
+
 curl "https://www.unicode.org/Public/$REV/ucd/ReadMe.txt" \
   > ./unicode_dir/ReadMe.txt || { echo failed; exit 1; }
 

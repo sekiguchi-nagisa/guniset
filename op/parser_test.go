@@ -1,8 +1,9 @@
 package op
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 var lexerTestCases = []struct {
@@ -41,25 +42,27 @@ func TestLexer(t *testing.T) {
 }
 
 func TestParserPrimary(t *testing.T) {
-	node, err := NewParser().Run([]byte(" 1234 "))
+	aliasMaps := AliasMaps{}
+
+	node, err := NewParser(aliasMaps).Run([]byte(" 1234 "))
 	assert.Nil(t, err)
 	assert.IsType(t, &RangeNode{}, node)
 	assert.Equal(t, rune(0x1234), node.(*RangeNode).runeRange.First)
 	assert.Equal(t, rune(0x1234), node.(*RangeNode).runeRange.Last)
 
-	node, err = NewParser().Run([]byte(" 1234 .. U+FFF0 "))
+	node, err = NewParser(aliasMaps).Run([]byte(" 1234 .. U+FFF0 "))
 	assert.Nil(t, err)
 	assert.IsType(t, &RangeNode{}, node)
 	assert.Equal(t, rune(0x1234), node.(*RangeNode).runeRange.First)
 	assert.Equal(t, rune(0xFFF0), node.(*RangeNode).runeRange.Last)
 
-	node, err = NewParser().Run([]byte("cat : Lu"))
+	node, err = NewParser(aliasMaps).Run([]byte("cat : Lu"))
 	assert.Nil(t, err)
 	assert.IsType(t, &GeneralCategoryNode{}, node)
 	assert.Equal(t, 1, len(node.(*GeneralCategoryNode).properties))
 	assert.Equal(t, CAT_Lu, node.(*GeneralCategoryNode).properties[0])
 
-	node, err = NewParser().Run([]byte("cat : Lu,Cn,  Lu ,   Mn , Cn   "))
+	node, err = NewParser(aliasMaps).Run([]byte("cat : Lu,Cn,  Lu ,   Mn , Cn   "))
 	assert.Nil(t, err)
 	assert.IsType(t, &GeneralCategoryNode{}, node)
 	assert.Equal(t, 3, len(node.(*GeneralCategoryNode).properties))
@@ -67,13 +70,13 @@ func TestParserPrimary(t *testing.T) {
 	assert.Equal(t, CAT_Mn, node.(*GeneralCategoryNode).properties[1])
 	assert.Equal(t, CAT_Cn, node.(*GeneralCategoryNode).properties[2])
 
-	node, err = NewParser().Run([]byte("eaw: W"))
+	node, err = NewParser(aliasMaps).Run([]byte("eaw: W"))
 	assert.Nil(t, err)
 	assert.IsType(t, &EastAsianWidthNode{}, node)
 	assert.Equal(t, 1, len(node.(*EastAsianWidthNode).properties))
 	assert.Equal(t, EAW_W, node.(*EastAsianWidthNode).properties[0])
 
-	node, err = NewParser().Run([]byte("eaw \n: N  ,  W\n,  N  ,F \n \n \t"))
+	node, err = NewParser(aliasMaps).Run([]byte("eaw \n: N  ,  W\n,  N  ,F \n \n \t"))
 	assert.Nil(t, err)
 	assert.IsType(t, &EastAsianWidthNode{}, node)
 	assert.Equal(t, 3, len(node.(*EastAsianWidthNode).properties))
@@ -83,7 +86,9 @@ func TestParserPrimary(t *testing.T) {
 }
 
 func TestParserNegate(t *testing.T) {
-	node, err := NewParser().Run([]byte("\t \t\n  ! cat:Zs + 0FeFf  "))
+	aliasMaps := AliasMaps{}
+
+	node, err := NewParser(aliasMaps).Run([]byte("\t \t\n  ! cat:Zs + 0FeFf  "))
 	assert.Nil(t, err)
 	assert.IsType(t, &UnionNode{}, node)
 	assert.IsType(t, &CompNode{}, node.(*UnionNode).left)
@@ -97,7 +102,9 @@ func TestParserNegate(t *testing.T) {
 }
 
 func TestParserBinary(t *testing.T) {
-	node, err := NewParser().Run([]byte("\t \t\n  cat:Zs + 0FeFf  "))
+	aliasMaps := AliasMaps{}
+
+	node, err := NewParser(aliasMaps).Run([]byte("\t \t\n  cat:Zs + 0FeFf  "))
 	assert.Nil(t, err)
 	assert.IsType(t, &UnionNode{}, node)
 	assert.IsType(t, &GeneralCategoryNode{}, node.(*UnionNode).left)
@@ -107,7 +114,7 @@ func TestParserBinary(t *testing.T) {
 	assert.Equal(t, rune(0xfeff), node.(*UnionNode).right.(*RangeNode).runeRange.First)
 	assert.Equal(t, rune(0xfeff), node.(*UnionNode).right.(*RangeNode).runeRange.Last)
 
-	node, err = NewParser().Run([]byte("(eaw:F + cat:Zs) - (U+1234 + 0FeFf)"))
+	node, err = NewParser(aliasMaps).Run([]byte("(eaw:F + cat:Zs) - (U+1234 + 0FeFf)"))
 	assert.Nil(t, err)
 	assert.IsType(t, &DiffNode{}, node)
 	assert.IsType(t, &UnionNode{}, node.(*DiffNode).left)
@@ -130,13 +137,15 @@ func TestParserBinary(t *testing.T) {
 }
 
 func TestParserBinaryPrecedence(t *testing.T) {
-	node, err := NewParser().Run([]byte("\t \t\n  cat:Mn + 0FeFf - eaw:F"))
+	aliasMaps := AliasMaps{}
+
+	node, err := NewParser(aliasMaps).Run([]byte("\t \t\n  cat:Mn + 0FeFf - eaw:F"))
 	assert.Nil(t, err)
 	assert.IsType(t, &DiffNode{}, node)
 	assert.IsType(t, &UnionNode{}, node.(*DiffNode).left)
 	assert.IsType(t, &EastAsianWidthNode{}, node.(*DiffNode).right)
 
-	node, err = NewParser().Run([]byte("\t \t\n  cat:Mn + 0FeFf * eaw:F"))
+	node, err = NewParser(aliasMaps).Run([]byte("\t \t\n  cat:Mn + 0FeFf * eaw:F"))
 	assert.Nil(t, err)
 	assert.IsType(t, &UnionNode{}, node)
 	assert.IsType(t, &GeneralCategoryNode{}, node.(*UnionNode).left)

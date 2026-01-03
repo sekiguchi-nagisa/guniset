@@ -1,5 +1,5 @@
 C, Other
-Cc, Control
+Cc, Control, cntrl
 Cf, Format
 Cn, Unassigned
 Co, Private_Use
@@ -11,15 +11,15 @@ Lm, Modifier_Letter
 Lo, Other_Letter
 Lt, Titlecase_Letter
 Lu, Uppercase_Letter
-M, Mark
+M, Mark, Combining_Mark
 Mc, Spacing_Mark
 Me, Enclosing_Mark
 Mn, Nonspacing_Mark
 N, Number
-Nd, Decimal_Number
+Nd, Decimal_Number, digit
 Nl, Letter_Number
 No, Other_Number
-P, Punctuation
+P, Punctuation, punct
 Pc, Connector_Punctuation
 Pd, Dash_Punctuation
 Pe, Close_Punctuation
