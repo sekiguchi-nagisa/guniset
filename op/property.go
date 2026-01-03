@@ -63,75 +63,6 @@ func EachGeneralCategoryAll(yield func(GeneralCategory) bool) {
 	}
 }
 
-var abbrToGeneralCategory map[string]GeneralCategory
-
-var longToGeneralCategory map[string]GeneralCategory
-
-func init() {
-	abbrToGeneralCategory = make(map[string]GeneralCategory)
-	for cat := range EachGeneralCategoryAll {
-		abbrToGeneralCategory[cat.String()] = cat
-	}
-
-	// define long name
-	longToGeneralCategory = make(map[string]GeneralCategory)
-	// L
-	longToGeneralCategory["Uppercase_Letter"] = CAT_Lu
-	longToGeneralCategory["Lowercase_Letter"] = CAT_Ll
-	longToGeneralCategory["Titlecase_Letter"] = CAT_Lt
-	longToGeneralCategory["Cased_Letter"] = CAT_LC
-	longToGeneralCategory["Modifier_Letter"] = CAT_Lm
-	longToGeneralCategory["Other_Letter"] = CAT_Lo
-	longToGeneralCategory["Letter"] = CAT_L
-	// M
-	longToGeneralCategory["Nonspacing_Mark"] = CAT_Mn
-	longToGeneralCategory["Spacing_Mark"] = CAT_Mc
-	longToGeneralCategory["Enclosing_Mark"] = CAT_Me
-	longToGeneralCategory["Mark"] = CAT_M
-	// N
-	longToGeneralCategory["Decimal_Number"] = CAT_Nd
-	longToGeneralCategory["Letter_Number"] = CAT_Nl
-	longToGeneralCategory["Other_Number"] = CAT_No
-	longToGeneralCategory["Number"] = CAT_N
-	// P
-	longToGeneralCategory["Connector_Punctuation"] = CAT_Pc
-	longToGeneralCategory["Dash_Punctuation"] = CAT_Pd
-	longToGeneralCategory["Open_Punctuation"] = CAT_Ps
-	longToGeneralCategory["Close_Punctuation"] = CAT_Pe
-	longToGeneralCategory["Initial_Punctuation"] = CAT_Pi
-	longToGeneralCategory["Final_Punctuation"] = CAT_Pf
-	longToGeneralCategory["Other_Punctuation"] = CAT_Po
-	longToGeneralCategory["Punctuation"] = CAT_P
-	// S
-	longToGeneralCategory["Math_Symbol"] = CAT_Sm
-	longToGeneralCategory["Currency_Symbol"] = CAT_Sc
-	longToGeneralCategory["Modifier_Symbol"] = CAT_Sk
-	longToGeneralCategory["Other_Symbol"] = CAT_So
-	longToGeneralCategory["Symbol"] = CAT_S
-	// Z
-	longToGeneralCategory["Space_Separator"] = CAT_Zs
-	longToGeneralCategory["Line_Separator"] = CAT_Zl
-	longToGeneralCategory["Paragraph_Separator"] = CAT_Zp
-	longToGeneralCategory["Separator"] = CAT_Z
-	// C
-	longToGeneralCategory["Control"] = CAT_Cc
-	longToGeneralCategory["Format"] = CAT_Cf
-	longToGeneralCategory["Surrogate"] = CAT_Cs
-	longToGeneralCategory["Private_Use"] = CAT_Co
-	longToGeneralCategory["Unassigned"] = CAT_Cn
-	longToGeneralCategory["Other"] = CAT_C
-}
-
-func ParseGeneralCategory(s string) (GeneralCategory, error) {
-	if c, ok := abbrToGeneralCategory[s]; ok {
-		return c, nil
-	}
-	if c, ok := longToGeneralCategory[s]; ok {
-		return c, nil
-	}
-	return GeneralCategory(0), fmt.Errorf("unknown general category: %s", s)
-}
-
 var longNameSet = map[GeneralCategory]string{
 	CAT_Lu: "Uppercase_Letter",
 	CAT_Ll: "Lowercase_Letter",
@@ -175,6 +106,31 @@ var longNameSet = map[GeneralCategory]string{
 
 func (c GeneralCategory) LongName() string {
 	return longNameSet[c]
+}
+
+var abbrToGeneralCategory map[string]GeneralCategory
+
+var longToGeneralCategory map[string]GeneralCategory
+
+func init() {
+	abbrToGeneralCategory = make(map[string]GeneralCategory)
+	for cat := range EachGeneralCategoryAll {
+		abbrToGeneralCategory[cat.String()] = cat
+	}
+	longToGeneralCategory = make(map[string]GeneralCategory)
+	for cat := range EachGeneralCategoryAll {
+		longToGeneralCategory[cat.LongName()] = cat
+	}
+}
+
+func ParseGeneralCategory(s string) (GeneralCategory, error) {
+	if c, ok := abbrToGeneralCategory[s]; ok {
+		return c, nil
+	}
+	if c, ok := longToGeneralCategory[s]; ok {
+		return c, nil
+	}
+	return GeneralCategory(0), fmt.Errorf("unknown general category: %s", s)
 }
 
 var combinedGeneralCategory = map[GeneralCategory][]GeneralCategory{

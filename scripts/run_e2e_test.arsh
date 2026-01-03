@@ -5,8 +5,8 @@ cd $SCRIPT_DIR/..  # move to project top
 var targets = @(./test/*/)
 assert ! $targets.empty()
 
+test -x $1 || { echo 1>&2 require guniset executable: $1; exit 1; }
 let bin = $1.realpath()
-test -x $bin || { echo 1>&2 must be executable: $bin; exit 1; }
 
 var count = 0
 var failed : [String]
