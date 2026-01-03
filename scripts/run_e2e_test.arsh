@@ -1,37 +1,14 @@
 #!/usr/bin/env arsh
 
-cd $SCRIPT_DIR/..  # move to project top
-
-var targets = @(./test/*/)
-assert ! $targets.empty()
-
 test -x $1 || { echo 1>&2 require guniset executable: $1; exit 1; }
 let bin = $1.realpath()
 
-var count = 0
-var failed : [String]
-for target in $targets {
-    $target = $target.slice(0,-1)
-    let opt = $target.endsWith("_bmp") ? "bmp" : $target.endsWith("_nonbmp") ? "non-bmp" : "all"
-    for test_case in @($target/*.test) {
-        $count++
-        let golden = $test_case.replace(".test", ".golden")
-        test -f $golden || { echo 1>&2 not founnd: $golden; exit 1; }
-        let op = "$(cat $test_case)"
-        echo run: $test_case
-        var ret = "$(call $bin generate --filter=$opt -- $op)"
-        var expect = "$(cat $golden)"
-        diff <(printf '%s\n' $expect) <(printf '%s\n' $ret) || { $failed.add($test_case); echo failed: $test_case; }
-    }
-}
+importenv GUNISET_DIR : "$SCRIPT_DIR/.."
+$GUNISET_DIR = $GUNISET_DIR.realpath()
 
-echo TOTAL $count test cases, PASS: ${$count-$failed.size()}
-if $failed.empty() {
-    exit 0
-} else {
-    echo the following test cases are failed
-    for f in $failed {
-        echo ' ' $f
-    }
-    exit 1
-}
+cd $SCRIPT_DIR/..
+
+shctl set errraise
+
+./scripts/run_e2e_generate_test.arsh $bin
+./scripts/run_e2e_enum_test.arsh $bin

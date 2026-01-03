@@ -1,0 +1,32 @@
+#!/usr/bin/env arsh
+
+function run_e2e(targets: [String], func: (String, String)->String): Int {
+    var count = 0
+    var failed : [String]
+
+    printf "RUN %s\n" $0
+    for target in $targets {
+        $target = $target.slice(0,-1)
+        for test_case in @($target/*.test) {
+            $count++
+            let golden = $test_case.replace(".test", ".golden")
+            test -f $golden || { echo 1>&2 not founnd: $golden; exit 1; }
+            let op = "$(cat $test_case)"
+            echo - run: $test_case
+            var ret = $func($op, $target)
+            var expect = "$(cat $golden)"
+            diff <(printf '%s\n' $expect) <(printf '%s\n' $ret) || { $failed.add($test_case); echo failed: $test_case; }
+        }
+    }
+
+    echo TOTAL $count test cases, PASS: ${$count-$failed.size()}
+    if $failed.empty() {
+        return 0
+    } else {
+        echo the following test cases are failed
+        for f in $failed {
+            printf " %s\n" $f
+        }
+        return 1
+    }
+}
