@@ -82,9 +82,6 @@ func (c *CLIGen) Run() error {
 	if err != nil {
 		return err
 	}
-	defer func(g *GUniSet) {
-		_ = g.Close()
-	}(g)
 	printOp, ok := StrToSetPrintOps[c.Filter]
 	if !ok {
 		return fmt.Errorf("unknown filter %q\n", c.Filter)
@@ -101,9 +98,6 @@ func (c *CLIQuery) Run() error {
 	if err != nil {
 		return err
 	}
-	defer func(g *GUniSet) {
-		_ = g.Close()
-	}(g)
 	return g.Query()
 }
 
@@ -116,9 +110,6 @@ func (c *CLIInfo) Run() error {
 	if err != nil {
 		return err
 	}
-	defer func(g *GUniSet) {
-		_ = g.Close()
-	}(g)
 	return g.Info()
 }
 
@@ -131,9 +122,6 @@ func (c *CLISample) Run() error {
 	if err != nil {
 		return err
 	}
-	defer func(g *GUniSet) {
-		_ = g.Close()
-	}(g)
 	printOp, ok := StrToSetPrintOps[c.Filter]
 	if !ok {
 		return fmt.Errorf("unknown filter %q\n", c.Filter)
@@ -150,9 +138,6 @@ func (c *CLIEnum) Run() error {
 	if err != nil {
 		return err
 	}
-	defer func(g *GUniSet) {
-		_ = g.Close()
-	}(g)
 	return g.EnumerateProperty()
 }
 

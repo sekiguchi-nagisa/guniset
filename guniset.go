@@ -1,10 +1,8 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"io"
-	"os"
 	"path"
 	"strings"
 
@@ -27,32 +25,18 @@ var StrToSetPrintOps = map[string]SetFilterOp{
 }
 
 type GUniSet struct {
-	unicodeDir           string
-	GeneralCategory      io.ReadCloser // DerivedGeneralCategory.txt
-	EastAsianWidth       io.ReadCloser // EastAsianWidth.txt
-	PropertyValueAliases io.ReadCloser // PropertyValueAliases.txt
-	Writer               io.Writer     // for generated Unicode set string
+	GeneralCategory      string    // DerivedGeneralCategory.txt
+	EastAsianWidth       string    // EastAsianWidth.txt
+	PropertyValueAliases string    // PropertyValueAliases.txt
+	Writer               io.Writer // for generated Unicode set string
 	SetOperation         string
 }
 
 func NewGUniSetFromDir(unicodeDir string, writer io.Writer, setOperation string) (*GUniSet, error) {
-	generalCategory, err := os.Open(path.Join(unicodeDir, "DerivedGeneralCategory.txt"))
-	if err != nil {
-		return nil, err
-	}
-	eastAsianWidth, err := os.Open(path.Join(unicodeDir, "EastAsianWidth.txt"))
-	if err != nil {
-		return nil, err
-	}
-	aliases, err := os.Open(path.Join(unicodeDir, "PropertyValueAliases.txt"))
-	if err != nil {
-		return nil, err
-	}
 	return &GUniSet{
-		unicodeDir:           unicodeDir,
-		GeneralCategory:      generalCategory,
-		EastAsianWidth:       eastAsianWidth,
-		PropertyValueAliases: aliases,
+		GeneralCategory:      path.Join(unicodeDir, "DerivedGeneralCategory.txt"),
+		EastAsianWidth:       path.Join(unicodeDir, "EastAsianWidth.txt"),
+		PropertyValueAliases: path.Join(unicodeDir, "PropertyValueAliases.txt"),
 		Writer:               writer,
 		SetOperation:         setOperation,
 	}, nil
@@ -132,7 +116,7 @@ func (g *GUniSet) Info() error {
 	if err != nil {
 		return err
 	}
-	_, err = fmt.Fprintf(g.Writer, "GUNISET_DIR: %s\n", g.unicodeDir)
+	_, err = fmt.Fprintf(g.Writer, "GUNISET_DIR: %s\n", path.Dir(g.GeneralCategory))
 	if err != nil {
 		return err
 	}
@@ -159,13 +143,4 @@ func (g *GUniSet) EnumerateProperty() error {
 		return nil
 	}
 	return fmt.Errorf("unknown property: %s", g.SetOperation)
-}
-
-func (g *GUniSet) Close() error {
-	err1 := g.GeneralCategory.Close()
-	err2 := g.EastAsianWidth.Close()
-	if err1 != nil || err2 != nil {
-		return errors.Join(err1, err2)
-	}
-	return nil
 }

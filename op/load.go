@@ -4,6 +4,9 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"iter"
+	"os"
+	"path"
 	"strings"
 
 	"github.com/sekiguchi-nagisa/guniset/set"
@@ -37,7 +40,7 @@ type EvalContext struct {
 	AliasMaps AliasMaps
 }
 
-func NewEvalContext(unicodeData io.ReadCloser, eastAsianWidth io.ReadCloser, aliases io.ReadCloser) (*EvalContext, error) {
+func NewEvalContext(unicodeData string, eastAsianWidth string, aliases string) (*EvalContext, error) {
 	headers := DataHeaders{}
 	catMap, err := LoadGeneralCategoryMap(unicodeData, &headers)
 	if err != nil {
@@ -101,13 +104,18 @@ func (e *EvalContext) Query(r rune, writer io.Writer) error {
 
 type DataLoader struct {
 	name    string
+	file    *os.File
 	scanner *bufio.Scanner
 	lineno  int
 	header  DataHeader
 }
 
-func NewDataLoader(name string, reader io.Reader) DataLoader {
-	return DataLoader{name: name, scanner: bufio.NewScanner(reader), lineno: 0}
+func NewDataLoader(p string) (DataLoader, error) {
+	f, err := os.Open(p)
+	if err != nil {
+		return DataLoader{}, err
+	}
+	return DataLoader{name: path.Base(p), file: f, scanner: bufio.NewScanner(f), lineno: 0}, nil
 }
 
 func (d *DataLoader) next() bool {
@@ -120,6 +128,14 @@ func (d *DataLoader) next() bool {
 
 func (d *DataLoader) line() string {
 	return d.scanner.Text()
+}
+
+func (d *DataLoader) lines() iter.Seq2[int, string] {
+	return func(yield func(int, string) bool) {
+		for d.next() {
+			yield(d.lineno, d.line())
+		}
+	}
 }
 
 func (d *DataLoader) err() error {
@@ -151,17 +167,16 @@ func parseEntry(line string) (runeRange set.RuneRange, property string, err erro
 	return
 }
 
-func (d *DataLoader) Load(reader io.ReadCloser, callback func(string) error) error {
+func (d *DataLoader) Load(callback func(string) error) error {
 	defer func(reader io.ReadCloser) {
 		_ = reader.Close()
-	}(reader)
-	for d.next() {
-		line := d.line()
-		if d.lineno == 1 && strings.HasPrefix(line, "#") {
+	}(d.file)
+	for lineno, line := range d.lines() {
+		if lineno == 1 && strings.HasPrefix(line, "#") {
 			d.header.Filename = strings.TrimPrefix(line, "# ")
 			continue
 		}
-		if d.lineno == 2 && strings.HasPrefix(line, "#") {
+		if lineno == 2 && strings.HasPrefix(line, "#") {
 			d.header.Created = strings.TrimPrefix(line, "# ")
 			continue
 		}
@@ -181,8 +196,8 @@ func (d *DataLoader) Load(reader io.ReadCloser, callback func(string) error) err
 	return nil
 }
 
-func (d *DataLoader) LoadProperties(reader io.ReadCloser, callback func(set.RuneRange, string) error) error {
-	return d.Load(reader, func(line string) error {
+func (d *DataLoader) LoadProperties(callback func(set.RuneRange, string) error) error {
+	return d.Load(func(line string) error {
 		runeRange, property, err := parseEntry(line)
 		if err != nil {
 			return err
@@ -191,15 +206,18 @@ func (d *DataLoader) LoadProperties(reader io.ReadCloser, callback func(set.Rune
 	})
 }
 
-func LoadGeneralCategoryMap(reader io.ReadCloser, dbInfoList *DataHeaders) (setMap UniSetMap[GeneralCategory], e error) {
+func LoadGeneralCategoryMap(filename string, dbInfoList *DataHeaders) (setMap UniSetMap[GeneralCategory], e error) {
 	builderMap := map[GeneralCategory]*set.UniSetBuilder{}
 	for cate := range EachGeneralCategory {
 		builderMap[cate] = &set.UniSetBuilder{}
 	}
 
 	// load
-	loader := NewDataLoader("DerivedGeneralCategory.txt", reader)
-	err := loader.LoadProperties(reader, func(runeRange set.RuneRange, property string) error {
+	loader, err := NewDataLoader(filename)
+	if err != nil {
+		return nil, err
+	}
+	err = loader.LoadProperties(func(runeRange set.RuneRange, property string) error {
 		cate, err := ParseGeneralCategory(property, nil)
 		if err != nil {
 			return err
@@ -221,7 +239,7 @@ func LoadGeneralCategoryMap(reader io.ReadCloser, dbInfoList *DataHeaders) (setM
 	return
 }
 
-func LoadEastAsianWidthMap(reader io.ReadCloser, dbInfoList *DataHeaders) (setMap UniSetMap[EastAsianWidth], e error) {
+func LoadEastAsianWidthMap(filename string, dbInfoList *DataHeaders) (setMap UniSetMap[EastAsianWidth], e error) {
 	builderMap := map[EastAsianWidth]*set.UniSetBuilder{}
 	for eaw := range EachEastAsianWidth {
 		if eaw == EAW_N {
@@ -231,8 +249,11 @@ func LoadEastAsianWidthMap(reader io.ReadCloser, dbInfoList *DataHeaders) (setMa
 	}
 
 	// load
-	loader := NewDataLoader("EastAsianWidth.txt", reader)
-	err := loader.LoadProperties(reader, func(runeRange set.RuneRange, property string) error {
+	loader, err := NewDataLoader(filename)
+	if err != nil {
+		return nil, err
+	}
+	err = loader.LoadProperties(func(runeRange set.RuneRange, property string) error {
 		eaw, err := ParseEastAsianWidth(property, nil)
 		if err != nil {
 			return err
@@ -256,13 +277,16 @@ func LoadEastAsianWidthMap(reader io.ReadCloser, dbInfoList *DataHeaders) (setMa
 	return
 }
 
-func LoadTargetAliasMap(reader io.ReadCloser, dbInfoList *DataHeaders, targets map[string]struct{}) (aliasMaps AliasMaps, e error) {
+func LoadTargetAliasMap(filename string, dbInfoList *DataHeaders, targets map[string]struct{}) (aliasMaps AliasMaps, e error) {
 	aliasMaps = AliasMaps{}
 	for target := range targets {
 		aliasMaps[target] = NewAliasMap(target)
 	}
-	loader := NewDataLoader("PropertyValueAliases.txt", reader)
-	err := loader.Load(reader, func(line string) error {
+	loader, err := NewDataLoader(filename)
+	if err != nil {
+		return nil, err
+	}
+	err = loader.Load(func(line string) error {
 		if ret, ok := ParseAliasEntry(line, targets); ok {
 			aliasMaps[ret.property].AddAll(ret.abbr, ret.longs)
 		}
