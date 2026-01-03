@@ -73,7 +73,7 @@ func runGoldenTest(t *testing.T, baseName string, filterOp SetFilterOp) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	targetDir := path.Join(wd, "test", baseName)
+	targetDir := path.Join(wd, "test", "generate", baseName)
 	cases, err := filepath.Glob(path.Join(targetDir, "*.test"))
 	if err != nil {
 		t.Fatal(err)
