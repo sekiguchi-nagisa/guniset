@@ -6,6 +6,19 @@ import "fmt"
 
 type GeneralCategory int
 
+var generalCategoryPrefix = []string{
+	"cat", "gc",
+}
+
+func IsGeneralCategoryPrefix(s string) bool {
+	for _, prefix := range generalCategoryPrefix {
+		if s == prefix {
+			return true
+		}
+	}
+	return false
+}
+
 const (
 	CAT_Lu GeneralCategory = iota
 	CAT_Ll
@@ -151,6 +164,19 @@ func (c GeneralCategory) Combinations() []GeneralCategory {
 //go:generate go run -mod=mod golang.org/x/tools/cmd/stringer -type EastAsianWidth -trimprefix EAW_
 
 type EastAsianWidth int
+
+var eastAsianWidthPrefix = []string{
+	"eaw", "ea",
+}
+
+func IsEastAsianWidthPrefix(s string) bool {
+	for _, prefix := range eastAsianWidthPrefix {
+		if s == prefix {
+			return true
+		}
+	}
+	return false
+}
 
 const (
 	EAW_W EastAsianWidth = iota

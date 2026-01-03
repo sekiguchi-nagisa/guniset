@@ -169,7 +169,7 @@ func (p *Parser) parsePrimary() Node {
 	switch curKind := p.fetch().kind; curKind {
 	case TokenId:
 		prefix := p.expect(TokenId)
-		if prefix.text == "cat" || prefix.text == "gc" {
+		if IsGeneralCategoryPrefix(prefix.text) {
 			p.expect(TokenColon)
 			var properties []GeneralCategory
 			p.parsePropertySeq(func(s string) {
@@ -180,7 +180,7 @@ func (p *Parser) parsePrimary() Node {
 				properties = append(properties, v)
 			})
 			return NewGeneralCategoryNode(properties)
-		} else if prefix.text == "eaw" {
+		} else if IsEastAsianWidthPrefix(prefix.text) {
 			p.expect(TokenColon)
 			var properties []EastAsianWidth
 			p.parsePropertySeq(func(s string) {
