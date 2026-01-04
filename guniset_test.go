@@ -48,7 +48,10 @@ func TestMain(m *testing.M) {
 	}(outputDir)
 	gUniSetDir = outputDir
 
-	targets := []string{"extracted/DerivedGeneralCategory.txt", "EastAsianWidth.txt", "PropertyValueAliases.txt"}
+	targets := []string{
+		"extracted/DerivedGeneralCategory.txt", "EastAsianWidth.txt", "PropertyValueAliases.txt",
+		"Scripts.txt", "ScriptExtensions.txt",
+	}
 	rev := "16.0.0"
 	for _, target := range targets {
 		url := fmt.Sprintf("https://www.unicode.org/Public/%s/ucd/%s", rev, target)

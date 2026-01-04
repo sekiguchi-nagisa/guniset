@@ -39,7 +39,7 @@ func (g *GeneralCategoryNode) Eval(context *EvalContext) set.UniSet {
 			builder.AddSet(s)
 		} else if comb := property.Combinations(); len(comb) > 0 {
 			for _, c := range comb {
-				if s, ok := context.CateMap[c]; ok {
+				if s, ok = context.CateMap[c]; ok {
 					builder.AddSet(s)
 				}
 			}
@@ -67,6 +67,30 @@ func (e *EastAsianWidthNode) Eval(context *EvalContext) set.UniSet {
 			builder.AddSet(s)
 		} else if property == EAW_N {
 			builder.AddSet(context.FillEawN())
+		}
+	}
+	return builder.Build()
+}
+
+type ScriptNode struct { // sc:Common
+	properties []Script
+}
+
+func NewScriptNode(properties []Script) *ScriptNode {
+	node := ScriptNode{}
+	node.properties = properties[0:]
+	slices.Sort(node.properties)
+	node.properties = slices.Compact(node.properties)
+	return &node
+}
+
+func (e *ScriptNode) Eval(context *EvalContext) set.UniSet {
+	builder := set.UniSetBuilder{}
+	for _, property := range e.properties {
+		if s, ok := context.ScriptMap[property]; ok {
+			builder.AddSet(s)
+		} else if property == context.ScriptDef.Unknown() {
+			builder.AddSet(context.FillScriptUnknown())
 		}
 	}
 	return builder.Build()

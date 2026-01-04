@@ -27,6 +27,8 @@ var StrToSetPrintOps = map[string]SetFilterOp{
 type GUniSet struct {
 	GeneralCategory      string    // DerivedGeneralCategory.txt
 	EastAsianWidth       string    // EastAsianWidth.txt
+	Scripts              string    // Scripts.txt
+	ScriptExtensions     string    // ScriptExtensions.txt
 	PropertyValueAliases string    // PropertyValueAliases.txt
 	Writer               io.Writer // for generated Unicode set string
 	SetOperation         string
@@ -36,6 +38,8 @@ func NewGUniSetFromDir(unicodeDir string, writer io.Writer, setOperation string)
 	return &GUniSet{
 		GeneralCategory:      path.Join(unicodeDir, "DerivedGeneralCategory.txt"),
 		EastAsianWidth:       path.Join(unicodeDir, "EastAsianWidth.txt"),
+		Scripts:              path.Join(unicodeDir, "Scripts.txt"),
+		ScriptExtensions:     path.Join(unicodeDir, "ScriptExtensions.txt"),
 		PropertyValueAliases: path.Join(unicodeDir, "PropertyValueAliases.txt"),
 		Writer:               writer,
 		SetOperation:         setOperation,
@@ -53,7 +57,7 @@ func PrintUniSet(uniSet *set.UniSet, writer io.Writer) error {
 }
 
 func (g *GUniSet) prepare() (*op.EvalContext, error) {
-	return op.NewEvalContext(g.GeneralCategory, g.EastAsianWidth, g.PropertyValueAliases)
+	return op.NewEvalContext(g.GeneralCategory, g.EastAsianWidth, g.PropertyValueAliases, g.Scripts)
 }
 
 func (g *GUniSet) Run(filterOp SetFilterOp) (*set.UniSet, error) {
@@ -61,7 +65,7 @@ func (g *GUniSet) Run(filterOp SetFilterOp) (*set.UniSet, error) {
 	if err != nil {
 		return nil, err
 	}
-	node, err := op.NewParser(ctx.AliasMaps).Run([]byte(g.SetOperation))
+	node, err := op.NewParser(ctx.AliasMaps, ctx.ScriptDef).Run([]byte(g.SetOperation))
 	if err != nil {
 		return nil, err
 	}
@@ -139,6 +143,14 @@ func (g *GUniSet) EnumerateProperty() error {
 		for eaw := range op.EachEastAsianWidth {
 			long := strings.Join(ctx.AliasMaps[op.EastAsianWidthPrefix].Lookup(eaw.String()), ", ")
 			_, _ = fmt.Fprintf(g.Writer, "%s, %s\n", eaw, long)
+		}
+		return nil
+	}
+	if op.IsScriptPrefix(g.SetOperation) {
+		for sc := range ctx.ScriptDef.EachScript {
+			abbr := ctx.ScriptDef.GetAbbr(sc)
+			long := strings.Join(ctx.AliasMaps[op.ScriptPrefix].Lookup(abbr), ", ")
+			_, _ = fmt.Fprintf(g.Writer, "%s, %s\n", abbr, long)
 		}
 		return nil
 	}

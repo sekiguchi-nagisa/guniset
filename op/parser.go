@@ -73,13 +73,14 @@ Next:
 
 type Parser struct {
 	aliasMaps AliasMaps
+	scriptDef *ScriptDef
 	tokens    []Token
 	pos       int
 	err       error
 }
 
-func NewParser(maps AliasMaps) *Parser {
-	return &Parser{aliasMaps: maps}
+func NewParser(maps AliasMaps, scriptDef *ScriptDef) *Parser {
+	return &Parser{aliasMaps: maps, scriptDef: scriptDef}
 }
 
 func syntaxErr(msg string) error {
@@ -192,8 +193,19 @@ func (p *Parser) parsePrimary() Node {
 				properties = append(properties, v)
 			})
 			return NewEastAsianWidthNode(properties)
+		} else if IsScriptPrefix(prefix.text) && p.scriptDef != nil {
+			p.expect(TokenColon)
+			var properties []Script
+			p.parsePropertySeq(func(s string) {
+				v, err := p.scriptDef.Parse(s, p.aliasMaps[ScriptPrefix])
+				if err != nil {
+					p.error(err.Error())
+				}
+				properties = append(properties, v)
+			})
+			return NewScriptNode(properties)
 		} else {
-			p.error(fmt.Sprintf("unknown property prefix: %s, must be `cat` or `eaw`", prefix.text))
+			p.error(fmt.Sprintf("unknown property prefix: %s, must be `cat`, `gc`, `ea`, `eaw`, `sc` or `scx`", prefix.text))
 		}
 	case TokenRune:
 		first := p.parseRune()

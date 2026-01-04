@@ -174,3 +174,70 @@ func ParseEastAsianWidth(s string, aliasMap *AliasMap) (EastAsianWidth, error) {
 	}
 	return EastAsianWidth(0), fmt.Errorf("unknown east asian width: %s", s)
 }
+
+const ScriptPrefix = "sc"
+
+func IsScriptPrefix(s string) bool {
+	return s == ScriptPrefix
+}
+
+type Script int
+
+type ScriptDef struct {
+	scriptToAbbr []string
+	abbrToScript map[string]Script
+	unknown      Script
+}
+
+func NewScriptDef(longs []string, aliasMap *AliasMap) *ScriptDef {
+	longs = append(longs, "Unknown")
+	s := &ScriptDef{
+		scriptToAbbr: make([]string, len(longs)),
+		abbrToScript: make(map[string]Script),
+		unknown:      Script(len(longs) - 1),
+	}
+	for i, long := range longs {
+		abbr := aliasMap.LookupAbbr(long)
+		s.scriptToAbbr[i] = abbr
+		s.abbrToScript[abbr] = Script(i)
+	}
+	return s
+}
+
+func (d *ScriptDef) GetAbbr(s Script) string {
+	return d.scriptToAbbr[s]
+}
+
+func (d *ScriptDef) EachScript(yield func(Script) bool) {
+	for i := 0; i < len(d.scriptToAbbr); i++ {
+		if !yield(Script(i)) {
+			break
+		}
+	}
+}
+
+func (d *ScriptDef) Parse(s string, aliasMap *AliasMap) (Script, error) {
+	if c, ok := d.abbrToScript[s]; ok {
+		return c, nil
+	}
+	if aliasMap != nil {
+		if abbr := aliasMap.LookupAbbr(s); len(abbr) > 0 {
+			if c, ok := d.abbrToScript[abbr]; ok {
+				return c, nil
+			}
+		}
+	}
+	return Script(0), fmt.Errorf("unknown script: %s", s)
+}
+
+func (d *ScriptDef) Unknown() Script {
+	return d.unknown
+}
+
+const ScriptExtensionPrefix = "scx"
+
+func IsScriptExtensionPrefix(s string) bool {
+	return s == ScriptExtensionPrefix
+}
+
+type ScriptExtension int
