@@ -22,7 +22,7 @@ type DataHeaders struct {
 
 func (d *DataHeaders) Print(writer io.Writer) error {
 	for _, info := range d.List {
-		_, err := fmt.Fprintf(writer, "%s\n%s\n", info.Filename, info.Created)
+		_, err := fmt.Fprintf(writer, "- %s\n  %s\n", info.Filename, info.Created)
 		if err != nil {
 			return err
 		}
