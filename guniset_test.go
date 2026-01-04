@@ -131,3 +131,7 @@ func TestPrintBMP(t *testing.T) {
 func TestPrintNonBMP(t *testing.T) {
 	runGoldenTest(t, "unicode16_nonbmp", SetPrintNonBMP)
 }
+
+func TestPrintScript(t *testing.T) {
+	runGoldenTest(t, "unicode16_script", SetPrintAll)
+}

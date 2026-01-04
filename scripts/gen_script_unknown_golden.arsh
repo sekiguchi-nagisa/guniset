@@ -1,0 +1,29 @@
+#!/usr/bin/env arsh
+
+# generate golden files for script 'Unknown'
+
+[<CLI(toplevel:$true)>]
+type _Param() {
+    [<Option(required: $true, help: "guniset binary path")>]
+    var bin = ""
+    [<Arg(required: $true, help: "output directory path")>]
+    var output = ""
+}
+
+_main(p : _Param) {
+    var op = "!("
+    var count = 0
+    for line in <(call ${p.bin} enum 'sc' | grep -v 'Unknown') {
+      if $count > 0 {
+        $op += " + "
+      }
+      $op += "sc:${$line.split(",")[0]}"
+      $count++
+    }
+  $op += ")"
+  echo generate golden test for sc:Unknown by $op
+  echo "sc:Unknown" > ${p.output}/sc_unknown.test
+  call ${p.bin} generate $op > ${p.output}/sc_unknown.golden
+}
+
+shctl is-sourced || _main $@
