@@ -56,7 +56,8 @@ func PrintUniSet(uniSet *set.UniSet, writer io.Writer) error {
 }
 
 func (g *GUniSet) prepare() (*op.EvalContext, error) {
-	return op.NewEvalContext(g.GeneralCategory, g.EastAsianWidth, g.PropertyValueAliases, g.Scripts)
+	return op.NewEvalContext(g.GeneralCategory, g.EastAsianWidth,
+		g.PropertyValueAliases, g.Scripts, g.ScriptExtensions)
 }
 
 func (g *GUniSet) Run(filterOp SetFilterOp) (*set.UniSet, error) {
@@ -144,7 +145,7 @@ func (g *GUniSet) EnumerateProperty() error {
 		}
 		return nil
 	}
-	if op.IsScriptPrefix(g.SetOperation) {
+	if op.IsScriptPrefix(g.SetOperation) || op.IsScriptExtensionPrefix(g.SetOperation) {
 		for sc := range ctx.ScriptDef.EachScript {
 			_, _ = fmt.Fprintln(g.Writer, ctx.ScriptDef.Format(sc, ctx.AliasMaps[op.ScriptPrefix]))
 		}

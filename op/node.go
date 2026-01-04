@@ -74,23 +74,36 @@ func (e *EastAsianWidthNode) Eval(context *EvalContext) set.UniSet {
 
 type ScriptNode struct { // sc:Common
 	properties []Script
+	extension  bool
 }
 
 func NewScriptNode(properties []Script) *ScriptNode {
-	node := ScriptNode{}
+	node := ScriptNode{extension: false}
 	node.properties = properties[0:]
 	slices.Sort(node.properties)
 	node.properties = slices.Compact(node.properties)
 	return &node
 }
 
+func NewScriptXNode(properties []Script) *ScriptNode {
+	node := NewScriptNode(properties)
+	node.extension = true
+	return node
+}
+
 func (e *ScriptNode) Eval(context *EvalContext) set.UniSet {
 	builder := set.UniSetBuilder{}
 	for _, property := range e.properties {
-		if s, ok := context.ScriptMap[property]; ok {
-			builder.AddSet(s)
-		} else if property == context.ScriptDef.Unknown() {
-			builder.AddSet(context.FillScriptUnknown())
+		if e.extension {
+			if s, ok := context.ScriptXMap[property]; ok {
+				builder.AddSet(s)
+			}
+		} else {
+			if s, ok := context.ScriptMap[property]; ok {
+				builder.AddSet(s)
+			} else if property == context.ScriptDef.Unknown() {
+				builder.AddSet(context.FillScriptUnknown())
+			}
 		}
 	}
 	return builder.Build()

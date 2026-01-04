@@ -36,6 +36,7 @@ having the following data
 * ``cat:Cn,Me``: Unicode General Category set
 * ``eaw:F,W``: East Asian Width set
 * ``sc:Common``: Script set
+* ``scx:Grek``: Script Extension set
 * ``U+1234``, ``0..1FFF``: Unicode code point
 
 ### Grammar
@@ -61,6 +62,7 @@ PrimaryExpression
     : ('cat' | 'gc') ':' CateList 
     | ('eaw' | 'ea') ':' EawList
     | 'sc' ':' ScriptList
+    | 'scx' ':' ScriptList        # for script extensions
     | CodePoint '..' CodePoint
     | CodePoint
     | '(' Epxression ')'

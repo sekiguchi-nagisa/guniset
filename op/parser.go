@@ -193,7 +193,7 @@ func (p *Parser) parsePrimary() Node {
 				properties = append(properties, v)
 			})
 			return NewEastAsianWidthNode(properties)
-		} else if IsScriptPrefix(prefix.text) && p.scriptDef != nil {
+		} else if (IsScriptPrefix(prefix.text) || IsScriptExtensionPrefix(prefix.text)) && p.scriptDef != nil {
 			p.expect(TokenColon)
 			var properties []Script
 			p.parsePropertySeq(func(s string) {
@@ -203,6 +203,9 @@ func (p *Parser) parsePrimary() Node {
 				}
 				properties = append(properties, v)
 			})
+			if IsScriptExtensionPrefix(prefix.text) {
+				return NewScriptXNode(properties)
+			}
 			return NewScriptNode(properties)
 		} else {
 			p.error(fmt.Sprintf("unknown property prefix: %s, must be `cat`, `gc`, `ea`, `eaw`, `sc` or `scx`", prefix.text))

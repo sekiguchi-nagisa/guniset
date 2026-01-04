@@ -263,5 +263,3 @@ const ScriptExtensionPrefix = "scx"
 func IsScriptExtensionPrefix(s string) bool {
 	return s == ScriptExtensionPrefix
 }
-
-type ScriptExtension int

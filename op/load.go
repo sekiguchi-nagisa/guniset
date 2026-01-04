@@ -33,15 +33,16 @@ func (d *DataHeaders) Print(writer io.Writer) error {
 type UniSetMap[T comparable] = map[T]*set.UniSet
 
 type EvalContext struct {
-	Headers   DataHeaders
-	CateMap   UniSetMap[GeneralCategory]
-	EawMap    UniSetMap[EastAsianWidth]
-	AliasMaps AliasMaps
-	ScriptDef *ScriptDef
-	ScriptMap UniSetMap[Script]
+	Headers    DataHeaders
+	CateMap    UniSetMap[GeneralCategory]
+	EawMap     UniSetMap[EastAsianWidth]
+	AliasMaps  AliasMaps
+	ScriptDef  *ScriptDef
+	ScriptMap  UniSetMap[Script]
+	ScriptXMap UniSetMap[Script]
 }
 
-func NewEvalContext(unicodeData string, eastAsianWidth string, aliases string, script string) (*EvalContext, error) {
+func NewEvalContext(unicodeData string, eastAsianWidth string, aliases string, script string, scriptX string) (*EvalContext, error) {
 	headers := DataHeaders{}
 	catMap, err := LoadGeneralCategoryMap(unicodeData, &headers)
 	if err != nil {
@@ -52,10 +53,7 @@ func NewEvalContext(unicodeData string, eastAsianWidth string, aliases string, s
 		return nil, err
 	}
 	aliasMaps, err := LoadTargetAliasMap(aliases, &headers,
-		map[string]struct{}{
-			GeneralCategoryPrefix: {}, EastAsianWidthPrefix: {},
-			ScriptPrefix: {}, ScriptExtensionPrefix: {},
-		})
+		map[string]struct{}{GeneralCategoryPrefix: {}, EastAsianWidthPrefix: {}, ScriptPrefix: {}})
 	if err != nil {
 		return nil, err
 	}
@@ -63,13 +61,18 @@ func NewEvalContext(unicodeData string, eastAsianWidth string, aliases string, s
 	if err != nil {
 		return nil, err
 	}
+	scriptXMap, err := LoadScriptXMap(scriptX, scriptDef, aliasMaps[ScriptPrefix], &headers)
+	if err != nil {
+		return nil, err
+	}
 	return &EvalContext{
-		Headers:   headers,
-		CateMap:   catMap,
-		EawMap:    eawMap,
-		AliasMaps: aliasMaps,
-		ScriptDef: scriptDef,
-		ScriptMap: scriptMap,
+		Headers:    headers,
+		CateMap:    catMap,
+		EawMap:     eawMap,
+		AliasMaps:  aliasMaps,
+		ScriptDef:  scriptDef,
+		ScriptMap:  scriptMap,
+		ScriptXMap: scriptXMap,
 	}, nil
 }
 
@@ -109,10 +112,24 @@ func (e *EvalContext) FillScriptUnknown() *set.UniSet {
 	return e.ScriptMap[e.ScriptDef.Unknown()]
 }
 
+func formatScriptX(def *ScriptDef, scx []Script) string {
+	builder := strings.Builder{}
+	builder.WriteString("[")
+	for i, s := range scx {
+		if i > 0 {
+			builder.WriteString(", ")
+		}
+		builder.WriteString(def.GetAbbr(s))
+	}
+	builder.WriteString("]")
+	return builder.String()
+}
+
 func (e *EvalContext) Query(r rune, writer io.Writer) error {
 	cat := CAT_Cn
 	eaw := EAW_N
 	sc := e.ScriptDef.Unknown()
+	var scx []Script
 	for cc, uniSet := range e.CateMap {
 		if uniSet.Find(r) {
 			cat = cc
@@ -131,11 +148,17 @@ func (e *EvalContext) Query(r rune, writer io.Writer) error {
 			break
 		}
 	}
+	for s, uniSet := range e.ScriptXMap {
+		if uniSet.Find(r) {
+			scx = append(scx, s)
+		}
+	}
 	_, err := fmt.Fprintf(writer, "CodePoint: U+%04X\n"+
-		"GeneralCategory: %s\nEastAsianWidth: %s\nScript: %s\n", r,
+		"GeneralCategory: %s\nEastAsianWidth: %s\nScript: %s\nScriptExtension: %s\n", r,
 		cat.Format(e.AliasMaps[GeneralCategoryPrefix]),
 		eaw.Format(e.AliasMaps[EastAsianWidthPrefix]),
-		e.ScriptDef.Format(sc, e.AliasMaps[ScriptPrefix]))
+		e.ScriptDef.Format(sc, e.AliasMaps[ScriptPrefix]),
+		formatScriptX(e.ScriptDef, scx))
 	return err
 }
 
@@ -374,4 +397,40 @@ func LoadScriptMap(filename string, aliasMap *AliasMap, dbInfoList *DataHeaders)
 	}
 	dbInfoList.List = append(dbInfoList.List, loader.header)
 	return scriptDef, setMap, nil
+}
+
+func LoadScriptXMap(filename string, def *ScriptDef, aliasMap *AliasMap, dbInfoList *DataHeaders) (setMap UniSetMap[Script], e error) {
+	builderMap := map[Script]*set.UniSetBuilder{}
+
+	// load
+	loader, err := NewDataLoader(filename)
+	if err != nil {
+		return nil, err
+	}
+	err = loader.LoadProperties(func(runeRange set.RuneRange, property string) error {
+		ss := strings.Split(property, " ")
+		for _, s := range ss {
+			script, err := def.Parse(s, aliasMap)
+			if err != nil {
+				return err
+			}
+			if _, ok := builderMap[script]; !ok { // lazy init
+				builderMap[script] = &set.UniSetBuilder{}
+			}
+			builderMap[script].AddRange(runeRange)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// build
+	setMap = map[Script]*set.UniSet{}
+	for cate, builder := range builderMap {
+		tmp := builder.Build()
+		setMap[cate] = &tmp
+	}
+	dbInfoList.List = append(dbInfoList.List, loader.header)
+	return setMap, nil
 }
