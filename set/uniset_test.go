@@ -125,3 +125,27 @@ func TestAdd(t *testing.T) {
 			fmt.Sprintf("index=%d, %s", i, stringify(testCase.r)))
 	}
 }
+
+func TestSample(t *testing.T) {
+	var table = []struct {
+		first int
+		last  int
+	}{
+		{0xE000, 0xF8FF},
+		{0xF0000, 0xFFFFD},
+		{0x100000, 0x10FFFD},
+	}
+	builder := UniSetBuilder{}
+	for _, v := range table {
+		builder.AddRange(RuneRange{rune(v.first), rune(v.last)})
+	}
+	set := builder.Build()
+	sampled := set.Sample(set.Len())
+	assert.Equal(t, set.Len()/2, sampled.Len(), "sample size")
+	for r := range sampled.Iter {
+		assert.True(t, set.Find(r), fmt.Sprintf("rune U+%04x", r))
+	}
+
+	sampled = set.Sample(-122)
+	assert.Equal(t, 0, sampled.Len(), "negative sample size")
+}

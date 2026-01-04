@@ -96,7 +96,8 @@ func (g *GUniSet) RunAndSampling(filterOp SetFilterOp, limit int) error {
 	if err != nil {
 		return err
 	}
-	for r := range uniSet.Sample(limit).Iter {
+	sampled := uniSet.Sample(limit)
+	for r := range sampled.Iter {
 		_, _ = fmt.Fprintf(g.Writer, "U+%04X\n", r)
 	}
 	return nil

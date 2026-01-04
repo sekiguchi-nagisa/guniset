@@ -42,7 +42,7 @@ func ParseRune(s string) (rune, error) {
 
 // UniSet set structure for Unicode code point
 type UniSet struct {
-	runes []rune //TODO: use rune range for large data
+	runes []rune
 }
 
 func NewUniSet(runes ...rune) UniSet {
@@ -189,6 +189,10 @@ func (u *UniSet) Copy() UniSet {
 	return copied
 }
 
+func (u *UniSet) Len() int {
+	return len(u.runes)
+}
+
 func (u *UniSet) Range(yield func(runeRange RuneRange) bool) {
 	for i := 0; i < len(u.runes); {
 		first := u.runes[i]
@@ -209,7 +213,7 @@ func (u *UniSet) Range(yield func(runeRange RuneRange) bool) {
 	}
 }
 
-func (u UniSet) Iter(yield func(r rune) bool) {
+func (u *UniSet) Iter(yield func(r rune) bool) {
 	for _, r := range u.runes {
 		if !yield(r) {
 			return
