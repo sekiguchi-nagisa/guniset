@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"path"
-	"strings"
 
 	"github.com/sekiguchi-nagisa/guniset/op"
 	"github.com/sekiguchi-nagisa/guniset/set"
@@ -134,23 +133,19 @@ func (g *GUniSet) EnumerateProperty() error {
 	}
 	if op.IsGeneralCategoryPrefix(g.SetOperation) {
 		for cat := range op.EachGeneralCategoryAll {
-			long := strings.Join(ctx.AliasMaps[op.GeneralCategoryPrefix].Lookup(cat.String()), ", ")
-			_, _ = fmt.Fprintf(g.Writer, "%s, %s\n", cat, long)
+			_, _ = fmt.Fprintln(g.Writer, cat.Format(ctx.AliasMaps[op.GeneralCategoryPrefix]))
 		}
 		return nil
 	}
 	if op.IsEastAsianWidthPrefix(g.SetOperation) {
 		for eaw := range op.EachEastAsianWidth {
-			long := strings.Join(ctx.AliasMaps[op.EastAsianWidthPrefix].Lookup(eaw.String()), ", ")
-			_, _ = fmt.Fprintf(g.Writer, "%s, %s\n", eaw, long)
+			_, _ = fmt.Fprintln(g.Writer, eaw.Format(ctx.AliasMaps[op.EastAsianWidthPrefix]))
 		}
 		return nil
 	}
 	if op.IsScriptPrefix(g.SetOperation) {
 		for sc := range ctx.ScriptDef.EachScript {
-			abbr := ctx.ScriptDef.GetAbbr(sc)
-			long := strings.Join(ctx.AliasMaps[op.ScriptPrefix].Lookup(abbr), ", ")
-			_, _ = fmt.Fprintf(g.Writer, "%s, %s\n", abbr, long)
+			_, _ = fmt.Fprintln(g.Writer, ctx.ScriptDef.Format(sc, ctx.AliasMaps[op.ScriptPrefix]))
 		}
 		return nil
 	}

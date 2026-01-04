@@ -123,7 +123,7 @@ func (c GeneralCategory) Format(aliasMap *AliasMap) string {
 	abbr := c.String()
 	tmp := []string{abbr}
 	tmp = append(tmp, aliasMap.Lookup(abbr)...)
-	return fmt.Sprintf("GeneralCategory: %s", strings.Join(tmp, ", "))
+	return strings.Join(tmp, ", ")
 }
 
 //go:generate go run -mod=mod golang.org/x/tools/cmd/stringer -type EastAsianWidth -trimprefix EAW_
@@ -189,7 +189,7 @@ func (e EastAsianWidth) Format(aliasMap *AliasMap) string {
 	abbr := e.String()
 	tmp := []string{abbr}
 	tmp = append(tmp, aliasMap.Lookup(abbr)...)
-	return fmt.Sprintf("EastAsianWidth: %s", strings.Join(tmp, ", "))
+	return strings.Join(tmp, ", ")
 }
 
 const ScriptPrefix = "sc"
@@ -255,7 +255,7 @@ func (d *ScriptDef) Format(s Script, aliasMap *AliasMap) string {
 	abbr := d.GetAbbr(s)
 	tmp := []string{abbr}
 	tmp = append(tmp, aliasMap.Lookup(abbr)...)
-	return fmt.Sprintf("Script: %s", strings.Join(tmp, ", "))
+	return strings.Join(tmp, ", ")
 }
 
 const ScriptExtensionPrefix = "scx"
