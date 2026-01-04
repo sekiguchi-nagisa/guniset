@@ -65,7 +65,7 @@ func (g *GUniSet) Run(filterOp SetFilterOp) (*set.UniSet, error) {
 	if err != nil {
 		return nil, err
 	}
-	node, err := op.NewParser(ctx.AliasMaps, ctx.ScriptDef).Run([]byte(g.SetOperation))
+	node, err := op.NewParser(ctx.AliasMapRecord, ctx.ScriptDef).Run([]byte(g.SetOperation))
 	if err != nil {
 		return nil, err
 	}
@@ -135,19 +135,19 @@ func (g *GUniSet) EnumerateProperty() error {
 	}
 	if op.IsGeneralCategoryPrefix(g.SetOperation) {
 		for cat := range op.EachGeneralCategoryAll {
-			_, _ = fmt.Fprintln(g.Writer, cat.Format(ctx.AliasMaps[op.GeneralCategoryPrefix]))
+			_, _ = fmt.Fprintln(g.Writer, cat.Format(ctx.AliasMapRecord.Category()))
 		}
 		return nil
 	}
 	if op.IsEastAsianWidthPrefix(g.SetOperation) {
 		for eaw := range op.EachEastAsianWidth {
-			_, _ = fmt.Fprintln(g.Writer, eaw.Format(ctx.AliasMaps[op.EastAsianWidthPrefix]))
+			_, _ = fmt.Fprintln(g.Writer, eaw.Format(ctx.AliasMapRecord.Eaw()))
 		}
 		return nil
 	}
 	if op.IsScriptPrefix(g.SetOperation) || op.IsScriptExtensionPrefix(g.SetOperation) {
 		for sc := range ctx.ScriptDef.EachScript {
-			_, _ = fmt.Fprintln(g.Writer, ctx.ScriptDef.Format(sc, ctx.AliasMaps[op.ScriptPrefix]))
+			_, _ = fmt.Fprintln(g.Writer, ctx.ScriptDef.Format(sc, ctx.AliasMapRecord.Script()))
 		}
 		return nil
 	}

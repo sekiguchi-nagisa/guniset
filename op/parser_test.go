@@ -42,7 +42,7 @@ func TestLexer(t *testing.T) {
 }
 
 func TestParserPrimary(t *testing.T) {
-	aliasMaps := AliasMaps{}
+	aliasMaps := NewAliasMapRecord()
 
 	node, err := NewParser(aliasMaps, nil).Run([]byte(" 1234 "))
 	assert.Nil(t, err)
@@ -86,7 +86,7 @@ func TestParserPrimary(t *testing.T) {
 }
 
 func TestParserNegate(t *testing.T) {
-	aliasMaps := AliasMaps{}
+	aliasMaps := NewAliasMapRecord()
 
 	node, err := NewParser(aliasMaps, nil).Run([]byte("\t \t\n  ! cat:Zs + 0FeFf  "))
 	assert.Nil(t, err)
@@ -102,7 +102,7 @@ func TestParserNegate(t *testing.T) {
 }
 
 func TestParserBinary(t *testing.T) {
-	aliasMaps := AliasMaps{}
+	aliasMaps := NewAliasMapRecord()
 
 	node, err := NewParser(aliasMaps, nil).Run([]byte("\t \t\n  cat:Zs + 0FeFf  "))
 	assert.Nil(t, err)
@@ -137,7 +137,7 @@ func TestParserBinary(t *testing.T) {
 }
 
 func TestParserBinaryPrecedence(t *testing.T) {
-	aliasMaps := AliasMaps{}
+	aliasMaps := NewAliasMapRecord()
 
 	node, err := NewParser(aliasMaps, nil).Run([]byte("\t \t\n  cat:Mn + 0FeFf - eaw:F"))
 	assert.Nil(t, err)

@@ -72,14 +72,14 @@ Next:
 }
 
 type Parser struct {
-	aliasMaps AliasMaps
+	aliasMaps *AliasMapRecord
 	scriptDef *ScriptDef
 	tokens    []Token
 	pos       int
 	err       error
 }
 
-func NewParser(maps AliasMaps, scriptDef *ScriptDef) *Parser {
+func NewParser(maps *AliasMapRecord, scriptDef *ScriptDef) *Parser {
 	return &Parser{aliasMaps: maps, scriptDef: scriptDef}
 }
 
@@ -175,7 +175,7 @@ func (p *Parser) parsePrimary() Node {
 			p.expect(TokenColon)
 			var properties []GeneralCategory
 			p.parsePropertySeq(func(s string) {
-				v, err := ParseGeneralCategory(s, p.aliasMaps[GeneralCategoryPrefix])
+				v, err := ParseGeneralCategory(s, p.aliasMaps.Category())
 				if err != nil {
 					p.error(err.Error())
 				}
@@ -186,7 +186,7 @@ func (p *Parser) parsePrimary() Node {
 			p.expect(TokenColon)
 			var properties []EastAsianWidth
 			p.parsePropertySeq(func(s string) {
-				v, err := ParseEastAsianWidth(s, p.aliasMaps[EastAsianWidthPrefix])
+				v, err := ParseEastAsianWidth(s, p.aliasMaps.Eaw())
 				if err != nil {
 					p.error(err.Error())
 				}
@@ -197,7 +197,7 @@ func (p *Parser) parsePrimary() Node {
 			p.expect(TokenColon)
 			var properties []Script
 			p.parsePropertySeq(func(s string) {
-				v, err := p.scriptDef.Parse(s, p.aliasMaps[ScriptPrefix])
+				v, err := p.scriptDef.Parse(s, p.aliasMaps.Script())
 				if err != nil {
 					p.error(err.Error())
 				}

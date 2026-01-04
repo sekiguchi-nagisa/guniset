@@ -33,13 +33,13 @@ func (d *DataHeaders) Print(writer io.Writer) error {
 type UniSetMap[T comparable] = map[T]*set.UniSet
 
 type EvalContext struct {
-	Headers    DataHeaders
-	CateMap    UniSetMap[GeneralCategory]
-	EawMap     UniSetMap[EastAsianWidth]
-	AliasMaps  AliasMaps
-	ScriptDef  *ScriptDef
-	ScriptMap  UniSetMap[Script]
-	ScriptXMap UniSetMap[Script]
+	Headers        DataHeaders
+	CateMap        UniSetMap[GeneralCategory]
+	EawMap         UniSetMap[EastAsianWidth]
+	AliasMapRecord *AliasMapRecord
+	ScriptDef      *ScriptDef
+	ScriptMap      UniSetMap[Script]
+	ScriptXMap     UniSetMap[Script]
 }
 
 func NewEvalContext(unicodeData string, eastAsianWidth string, aliases string, script string, scriptX string) (*EvalContext, error) {
@@ -52,27 +52,26 @@ func NewEvalContext(unicodeData string, eastAsianWidth string, aliases string, s
 	if err != nil {
 		return nil, err
 	}
-	aliasMaps, err := LoadTargetAliasMap(aliases, &headers,
-		map[string]struct{}{GeneralCategoryPrefix: {}, EastAsianWidthPrefix: {}, ScriptPrefix: {}})
+	aliasMaps, err := LoadTargetAliasMap(aliases, &headers)
 	if err != nil {
 		return nil, err
 	}
-	scriptDef, scriptMap, err := LoadScriptMap(script, aliasMaps[ScriptPrefix], &headers)
+	scriptDef, scriptMap, err := LoadScriptMap(script, aliasMaps.Script(), &headers)
 	if err != nil {
 		return nil, err
 	}
-	scriptXMap, err := LoadScriptXMap(scriptX, scriptDef, aliasMaps[ScriptPrefix], &headers)
+	scriptXMap, err := LoadScriptXMap(scriptX, scriptDef, aliasMaps.Script(), &headers)
 	if err != nil {
 		return nil, err
 	}
 	return &EvalContext{
-		Headers:    headers,
-		CateMap:    catMap,
-		EawMap:     eawMap,
-		AliasMaps:  aliasMaps,
-		ScriptDef:  scriptDef,
-		ScriptMap:  scriptMap,
-		ScriptXMap: scriptXMap,
+		Headers:        headers,
+		CateMap:        catMap,
+		EawMap:         eawMap,
+		AliasMapRecord: aliasMaps,
+		ScriptDef:      scriptDef,
+		ScriptMap:      scriptMap,
+		ScriptXMap:     scriptXMap,
 	}, nil
 }
 
@@ -155,9 +154,9 @@ func (e *EvalContext) Query(r rune, writer io.Writer) error {
 	}
 	_, err := fmt.Fprintf(writer, "CodePoint: U+%04X\n"+
 		"GeneralCategory: %s\nEastAsianWidth: %s\nScript: %s\nScriptExtension: %s\n", r,
-		cat.Format(e.AliasMaps[GeneralCategoryPrefix]),
-		eaw.Format(e.AliasMaps[EastAsianWidthPrefix]),
-		e.ScriptDef.Format(sc, e.AliasMaps[ScriptPrefix]),
+		cat.Format(e.AliasMapRecord.Category()),
+		eaw.Format(e.AliasMapRecord.Eaw()),
+		e.ScriptDef.Format(sc, e.AliasMapRecord.Script()),
 		formatScriptX(e.ScriptDef, scx))
 	return err
 }
@@ -337,26 +336,21 @@ func LoadEastAsianWidthMap(filename string, dbInfoList *DataHeaders) (setMap Uni
 	return
 }
 
-func LoadTargetAliasMap(filename string, dbInfoList *DataHeaders, targets map[string]struct{}) (aliasMaps AliasMaps, e error) {
-	aliasMaps = AliasMaps{}
-	for target := range targets {
-		aliasMaps[target] = NewAliasMap(target)
-	}
+func LoadTargetAliasMap(filename string, dbInfoList *DataHeaders) (*AliasMapRecord, error) {
+	aliasMapRecord := NewAliasMapRecord()
 	loader, err := NewDataLoader(filename)
 	if err != nil {
 		return nil, err
 	}
 	err = loader.Load(func(line string) error {
-		if ret, ok := ParseAliasEntry(line, targets); ok {
-			aliasMaps[ret.property].AddAll(ret.abbr, ret.longs)
-		}
+		aliasMapRecord.Resolve(line)
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
 	dbInfoList.List = append(dbInfoList.List, loader.header)
-	return aliasMaps, nil
+	return aliasMapRecord, nil
 }
 
 func LoadScriptMap(filename string, aliasMap *AliasMap, dbInfoList *DataHeaders) (def *ScriptDef, setMap UniSetMap[Script], e error) {
