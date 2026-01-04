@@ -29,6 +29,7 @@ having ``DerivedGeneralCategory.txt`` and ``EastAsianWidth.txt``
 
 * ``cat:Cn,Me``: Unicode General Category set
 * ``eaw:F,W``: East Asian Width set
+* ``sc:Common``: Script set
 * ``U+1234``, ``0..1FFF``: Unicode code point
 
 ### Grammar
@@ -51,8 +52,9 @@ ComplementExpression
     | '!' ComplementExpression
 
 PrimaryExpression
-    : 'cat' ':' CateList 
-    | 'eaw' ':' EawList
+    : ('cat' | 'gc') ':' CateList 
+    | ('eaw' | 'ea') ':' EawList
+    | 'sc' ':' ScriptList
     | CodePoint '..' CodePoint
     | CodePoint
     | '(' Epxression ')'
@@ -68,6 +70,7 @@ Cate
     | 'Pc' | 'Pd' | 'Ps' | 'Pe' | 'Pi' | 'Pf' | 'Po'
     | 'Sm' | 'Sc' | 'Sk' | 'So' | 'Zs' | 'Zl' | 'Zp'
     | 'Cc' | 'Cf' | 'Cs' | 'Co' | 'Cn'
+    | <other general category values and aliases>
 
 EawList
     : Eaw
@@ -75,7 +78,15 @@ EawList
 
 Eaw
     : 'F' | 'W' | 'A' | 'Na' | 'N' | 'H'
- 
+    | <other east asian width aliases>
+
+ScriptList
+    : Sctipt
+    | Script ',' ScriptList
+
+Script
+    : <script values and aliases>
+
 CodePoint
     : 'U+' [0-9a-fA-F]+
     | [0-9] [0-9a-fA-F]*
