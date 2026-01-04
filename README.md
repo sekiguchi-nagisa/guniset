@@ -13,7 +13,13 @@ GUNISET_DIR=./unicode_data guniset generate <set operation>
 ```
 
 The ``GUNISET_DIR`` environmental variable must indicate a directory
-having ``DerivedGeneralCategory.txt`` and ``EastAsianWidth.txt``
+having the following data
+
+* ``DerivedGeneralCategory.txt``
+* ``EastAsianWidth.txt``
+* ``PropertyValueAliases.txt``
+* ``Scripts.txt``
+* ``ScriptExtensions.txt``
 
 ## Set Operation
 
