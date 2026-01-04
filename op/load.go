@@ -132,9 +132,10 @@ func (e *EvalContext) Query(r rune, writer io.Writer) error {
 		}
 	}
 	_, err := fmt.Fprintf(writer, "CodePoint: U+%04X\n"+
-		"GeneralCategory: %v\n"+
-		"EastAsianWidth: %v\n"+
-		"Script: %s\n", r, cat, eaw, e.ScriptDef.GetAbbr(sc))
+		"%s\n%s\n%s\n", r,
+		cat.Format(e.AliasMaps[GeneralCategoryPrefix]),
+		eaw.Format(e.AliasMaps[EastAsianWidthPrefix]),
+		e.ScriptDef.Format(sc, e.AliasMaps[ScriptPrefix]))
 	return err
 }
 
