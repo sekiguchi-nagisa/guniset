@@ -1,0 +1,44 @@
+#!/usr/bin/env arsh
+
+var REV="16.0.0"
+
+let output_dir = $1.realpath()
+
+test -f Scripts.txt ||
+  curl "https://www.unicode.org/Public/$REV/ucd/Scripts.txt" \
+    > ./Scripts.txt
+
+test -f PropertyValueAliases.txt ||
+  curl "https://www.unicode.org/Public/$REV/ucd/PropertyValueAliases.txt" \
+    > ./PropertyValueAliases.txt
+
+## erxtract property
+var propertySet : [String:Bool]
+var count =0 
+for line in new FD('./Scripts.txt') {
+  $count++
+  ($line.empty() || $line.startsWith('#')) && continue
+  var matched = $/^(?<first>[0-9A-F]+)(\.\.(?<last>[0-9A-F]+))?[ ]*;[ ]+(?<sc>([a-zA-Z][_a-zA-Z0-9]*)) +#.+$/.match($line) ?? {echo failed at $count: $line; exit 1;}
+  var sc = $matched.named('sc')!
+  $propertySet.putIfAbsent($sc, $true)
+}
+$propertySet.put("Unknown", $true)
+
+
+## extract property value alias
+var properties : [String] 
+for line in new FD('./PropertyValueAliases.txt') {
+  ($line.empty() || $line.startsWith('#') || !$line.startsWith('sc')) && continue
+  var ss = $line.slice("sc".size()).replace(" ", "").split(";")
+  var pp : [String]
+  for s in $ss {
+    $s.empty() && continue
+    $pp.add($s)
+  }
+  if $propertySet.get($pp[1]) {
+    $properties.push($pp.join(", "))
+  }
+}
+
+printf "%s\n" $properties > $output_dir/sc.golden
+printf "%s\n" $properties > $output_dir/scx.golden
