@@ -12,5 +12,5 @@ COPY . /home/tux/guniset
 WORKDIR /home/tux/guniset/
 
 CMD DIR="$(pwd)" && git config --global --add safe.directory "${PWD}" && \
-    ./scripts/build.sh && ./scripts/get_unicode_data.sh && \
+    ./scripts/build.sh && mkdir -p unicode_dir && ./guniset download --rev=16.0.0 ./unicode_dir && \
     GUNISET_DIR=./unicode_dir ./scripts/run_e2e_test.arsh ./guniset

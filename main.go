@@ -30,6 +30,11 @@ type CLIEnum struct {
 	Property string `arg:"" required:"" help:"Specify enumerating property"`
 }
 
+type CLIDownload struct {
+	Output string `arg:"" help:"Specify output directory name" default:"./"`
+	Rev    string `optional:"" help:"Specify revision" default:"latest"`
+}
+
 var CLI struct {
 	Version  kong.VersionFlag `short:"v" help:"Show version information"`
 	Generate CLIGen           `cmd:"" help:"Generate Unicode set"`
@@ -37,6 +42,7 @@ var CLI struct {
 	Info     CLIInfo          `cmd:"" help:"Show information about Unicode database"`
 	Sample   CLISample        `cmd:"" help:"Sample Unicode code points"`
 	Enum     CLIEnum          `cmd:"" help:"Enumerate Unicode properties"`
+	Download CLIDownload      `cmd:"" help:"Download Unicode database"`
 }
 
 var version = "" // for version embedding (specified like "-X main.version=v0.1.0")
@@ -139,6 +145,10 @@ func (c *CLIEnum) Run() error {
 		return err
 	}
 	return g.EnumerateProperty()
+}
+
+func (c *CLIDownload) Run() error {
+	return fetchUnicodeData(c.Rev, c.Output)
 }
 
 func main() {

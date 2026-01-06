@@ -3,7 +3,11 @@ package main
 import (
 	"fmt"
 	"io"
+	"log"
+	"net/http"
+	"os"
 	"path"
+	"regexp"
 
 	"github.com/sekiguchi-nagisa/guniset/op"
 	"github.com/sekiguchi-nagisa/guniset/set"
@@ -152,4 +156,56 @@ func (g *GUniSet) EnumerateProperty() error {
 		return nil
 	}
 	return fmt.Errorf("unknown property: %s", g.SetOperation)
+}
+
+func fetchContent(url string, output string) error {
+	resp, err := http.Get(url)
+	if err != nil {
+		return fmt.Errorf("cannot fetch %s: %v", url, err)
+	}
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(resp.Body)
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("cannot fetch %s: %s", url, resp.Status)
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("cannot read body %s: %v", url, err)
+	}
+	file, err := os.Create(output)
+	if err != nil {
+		return err
+	}
+	defer func(file *os.File) {
+		_ = file.Close()
+	}(file)
+	_, err = file.Write(body)
+	return err
+}
+
+var revPattern = regexp.MustCompile(`^[1-9][0-9]+\.[0-9]+\.[0-9]+$`)
+
+func fetchUnicodeData(rev string, output string) error {
+	if !revPattern.MatchString(rev) && rev != "latest" {
+		return fmt.Errorf("invalid revision %q", rev)
+	}
+
+	targets := []string{
+		"extracted/DerivedGeneralCategory.txt", "EastAsianWidth.txt", "PropertyValueAliases.txt",
+		"Scripts.txt", "ScriptExtensions.txt",
+	}
+	if rev == "latest" {
+		rev = "UCD/latest"
+	}
+	for _, target := range targets {
+		url := fmt.Sprintf("https://www.unicode.org/Public/%s/ucd/%s", rev, target)
+		log.Printf("@@ try downloading %s to %s", url, output)
+		err := fetchContent(url, path.Join(output, path.Base(target)))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

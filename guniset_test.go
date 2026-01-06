@@ -2,9 +2,7 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"log"
-	"net/http"
 	"os"
 	"path"
 	"path/filepath"
@@ -15,27 +13,6 @@ import (
 )
 
 var gUniSetDir string
-
-func fetchContent(url string, output string) error {
-	resp, err := http.Get(url)
-	if err != nil {
-		return fmt.Errorf("cannot fetch %s: %v", url, err)
-	}
-	defer func(Body io.ReadCloser) {
-		_ = Body.Close()
-	}(resp.Body)
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("cannot read body %s: %v", url, err)
-	}
-	file, err := os.Create(output)
-	if err != nil {
-		return err
-	}
-	_, err = file.Write(body)
-	return err
-}
 
 func TestMain(m *testing.M) {
 	// get unicode data
@@ -48,20 +25,10 @@ func TestMain(m *testing.M) {
 	}(outputDir)
 	gUniSetDir = outputDir
 
-	targets := []string{
-		"extracted/DerivedGeneralCategory.txt", "EastAsianWidth.txt", "PropertyValueAliases.txt",
-		"Scripts.txt", "ScriptExtensions.txt",
+	err = fetchUnicodeData("16.0.0", outputDir)
+	if err != nil {
+		log.Fatal(err)
 	}
-	rev := "16.0.0"
-	for _, target := range targets {
-		url := fmt.Sprintf("https://www.unicode.org/Public/%s/ucd/%s", rev, target)
-		_, _ = fmt.Fprintf(os.Stdout, "@@ try downloading %s to %s\n", url, outputDir)
-		err = fetchContent(url, path.Join(outputDir, path.Base(target)))
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
 	exitCode := m.Run()
 	if exitCode == 0 {
 		_ = os.RemoveAll(outputDir)

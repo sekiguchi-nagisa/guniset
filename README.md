@@ -9,6 +9,8 @@ Unicode set extraction tool written in Go. It is heavily inspired by
 ## Usage
 
 ```sh
+mkdir unicode_data   # unicode data directory
+guniset download ./unicode_data  # download unicode data
 GUNISET_DIR=./unicode_data guniset generate <set operation>
 ```
 
