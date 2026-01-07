@@ -2,7 +2,7 @@ package set
 
 import (
 	"fmt"
-	"math/rand"
+	"math/rand/v2"
 	"slices"
 	"strconv"
 	"strings"
@@ -237,11 +237,11 @@ func (u *UniSet) String() string {
 	return sb.String()
 }
 
-func (u *UniSet) Sample(limit int) UniSet {
+func (u *UniSet) Sample(rnd *rand.Rand, limit int) UniSet {
 	runeSet := map[rune]struct{}{}
 	limit = min(limit, len(u.runes)/2)
 	for len(runeSet) < limit {
-		runeSet[u.runes[rand.Intn(len(u.runes))]] = struct{}{}
+		runeSet[u.runes[rnd.IntN(len(u.runes))]] = struct{}{}
 	}
 	builder := UniSetBuilder{}
 	for r := range runeSet {

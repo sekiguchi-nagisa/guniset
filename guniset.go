@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand/v2"
 	"net/http"
 	"os"
 	"path"
@@ -96,12 +97,13 @@ func (g *GUniSet) RunAndPrint(filterOp SetFilterOp) error {
 	return PrintUniSet(uniSet, g.Writer)
 }
 
-func (g *GUniSet) RunAndSampling(filterOp SetFilterOp, limit int) error {
+func (g *GUniSet) RunAndSampling(seed uint64, filterOp SetFilterOp, limit int) error {
 	uniSet, err := g.Run(filterOp)
 	if err != nil {
 		return err
 	}
-	sampled := uniSet.Sample(limit)
+	rnd := rand.New(rand.NewPCG(seed, 42))
+	sampled := uniSet.Sample(rnd, limit)
 	for r := range sampled.Iter {
 		_, _ = fmt.Fprintf(g.Writer, "U+%04X\n", r)
 	}

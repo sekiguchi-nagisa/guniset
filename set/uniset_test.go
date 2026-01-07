@@ -2,6 +2,7 @@ package set
 
 import (
 	"fmt"
+	"math/rand/v2"
 	"slices"
 	"strings"
 	"testing"
@@ -140,12 +141,13 @@ func TestSample(t *testing.T) {
 		builder.AddRange(RuneRange{rune(v.first), rune(v.last)})
 	}
 	set := builder.Build()
-	sampled := set.Sample(set.Len())
+	rnd := rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64()))
+	sampled := set.Sample(rnd, set.Len())
 	assert.Equal(t, set.Len()/2, sampled.Len(), "sample size")
 	for r := range sampled.Iter {
 		assert.True(t, set.Find(r), fmt.Sprintf("rune U+%04x", r))
 	}
 
-	sampled = set.Sample(-122)
+	sampled = set.Sample(rnd, -122)
 	assert.Equal(t, 0, sampled.Len(), "negative sample size")
 }

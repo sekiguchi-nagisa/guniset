@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"runtime/debug"
+	"time"
 
 	"github.com/alecthomas/kong"
 )
@@ -21,9 +22,10 @@ type CLIInfo struct {
 }
 
 type CLISample struct {
-	Set    string `arg:"" required:"" help:"Specify set operation"`
-	Filter string `optional:"" help:"Filter output (all: include all, bmp: only bmp, non-bmp: exclude bmp)" enum:"all,,bmp,non-bmp" default:"all"`
-	Limit  int    `optional:"" help:"Limit sampling count" default:"5"`
+	Set    string  `arg:"" required:"" help:"Specify set operation"`
+	Filter string  `optional:"" help:"Filter output (all: include all, bmp: only bmp, non-bmp: exclude bmp)" enum:"all,,bmp,non-bmp" default:"all"`
+	Limit  int     `optional:"" help:"Limit sampling count" default:"5"`
+	Seed   *uint64 `optional:"" help:"Specify random seed. if not specified, use time.Now().UnixNano()"`
 }
 
 type CLIEnum struct {
@@ -132,7 +134,13 @@ func (c *CLISample) Run() error {
 	if !ok {
 		return fmt.Errorf("unknown filter %q\n", c.Filter)
 	}
-	return g.RunAndSampling(printOp, c.Limit)
+	var seed uint64 = 0
+	if c.Seed != nil {
+		seed = *c.Seed
+	} else {
+		seed = uint64(time.Now().UnixNano())
+	}
+	return g.RunAndSampling(seed, printOp, c.Limit)
 }
 
 func (c *CLIEnum) Run() error {
