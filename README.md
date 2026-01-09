@@ -48,13 +48,10 @@ Expression
     : UnionOrDiffEpxression
 
 UnionOrDiffExpression 
-    : IntersectionExpression
-    | UnionOrDiffExpression '+' IntersectionExpression
-    | UnionOrDiffExpression '-' IntersectionExpression
+    : IntersectionExpression ( ( '+' | '-' ) IntersectionExpression )*
 
 IntersectionExpression
-    : ComplementExpression
-    | IntersectionExpression '*' ComplementExpression
+    : IntersectionExpression ( '*' ComplementExpression )*
 
 ComplementExpression
     : PrimaryExpression
