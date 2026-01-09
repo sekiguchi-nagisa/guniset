@@ -51,7 +51,7 @@ UnionOrDiffExpression
     : IntersectionExpression ( ( '+' | '-' ) IntersectionExpression )*
 
 IntersectionExpression
-    : IntersectionExpression ( '*' ComplementExpression )*
+    : ComplementExpression ( '*' ComplementExpression )*
 
 ComplementExpression
     : PrimaryExpression
