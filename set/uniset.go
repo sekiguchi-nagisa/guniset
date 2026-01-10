@@ -239,7 +239,7 @@ func (u *UniSet) String() string {
 
 func (u *UniSet) Sample(rnd *rand.Rand, limit int) UniSet {
 	runeSet := map[rune]struct{}{}
-	limit = min(limit, len(u.runes)/2)
+	limit = min(limit, len(u.runes)/2+len(u.runes)%2)
 	for len(runeSet) < limit {
 		runeSet[u.runes[rnd.IntN(len(u.runes))]] = struct{}{}
 	}
