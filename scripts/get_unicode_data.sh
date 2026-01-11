@@ -19,6 +19,9 @@ curl "https://www.unicode.org/Public/$REV/ucd/Scripts.txt" \
 curl "https://www.unicode.org/Public/$REV/ucd/ScriptExtensions.txt" \
   > ./unicode_dir/ScriptExtensions.txt || { echo failed; exit 1; }
 
+curl "https://www.unicode.org/Public/$REV/ucd/PropList.txt" \
+  > ./unicode_dir/PropList.txt || { echo failed; exit 1; }
+
 curl "https://www.unicode.org/Public/$REV/ucd/ReadMe.txt" \
   > ./unicode_dir/ReadMe.txt || { echo failed; exit 1; }
 

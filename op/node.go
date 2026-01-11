@@ -109,6 +109,28 @@ func (e *ScriptNode) Eval(context *EvalContext) set.UniSet {
 	return builder.Build()
 }
 
+type PropNode struct { // prop:Dash
+	properties []PropList
+}
+
+func NewPropNode(properties []PropList) *PropNode {
+	node := PropNode{properties: properties}
+	node.properties = properties[0:]
+	slices.Sort(node.properties)
+	node.properties = slices.Compact(node.properties)
+	return &node
+}
+
+func (p *PropNode) Eval(context *EvalContext) set.UniSet {
+	builder := set.UniSetBuilder{}
+	for _, property := range p.properties {
+		if s, ok := context.PropListMap[property]; ok {
+			builder.AddSet(s)
+		}
+	}
+	return builder.Build()
+}
+
 type CompNode struct { // ! SET
 	node Node
 }

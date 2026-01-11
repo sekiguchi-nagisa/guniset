@@ -2,6 +2,7 @@ package op
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 )
 
@@ -262,4 +263,53 @@ const ScriptExtensionPrefix = "scx"
 
 func IsScriptExtensionPrefix(s string) bool {
 	return s == ScriptExtensionPrefix
+}
+
+// PropertyDef common Unicode property definition
+type PropertyDef[T int] struct {
+	propertyToName []string
+	nameToProperty map[string]T
+}
+
+func NewPropertyDef[T int](names []string) *PropertyDef[T] {
+	ret := &PropertyDef[T]{
+		propertyToName: slices.Clone(names),
+		nameToProperty: make(map[string]T),
+	}
+	for i, name := range names {
+		p := T(i)
+		ret.nameToProperty[name] = p
+	}
+	return ret
+}
+
+func (d *PropertyDef[T]) Parse(s string) (T, error) {
+	if p, ok := d.nameToProperty[s]; ok {
+		return p, nil
+	}
+	return T(0), fmt.Errorf("unknown property: %s", s)
+}
+
+func (d *PropertyDef[T]) GetName(p T) string {
+	return d.propertyToName[p]
+}
+
+func (d *PropertyDef[T]) EachProperty(yield func(T) bool) {
+	for i := 0; i < len(d.propertyToName); i++ {
+		if !yield(T(i)) {
+			break
+		}
+	}
+}
+
+func (d *PropertyDef[T]) Format(p T) string {
+	return d.GetName(p)
+}
+
+type PropList = int
+
+const PropListPrefix = "prop"
+
+func IsPropListPrefix(s string) bool {
+	return s == PropListPrefix
 }

@@ -30,6 +30,26 @@ func (d *DataHeaders) Print(writer io.Writer) error {
 	return nil
 }
 
+type UnicodeData struct {
+	GeneralCategory      string // DerivedGeneralCategory.txt
+	EastAsianWidth       string // EastAsianWidth.txt
+	Scripts              string // Scripts.txt
+	ScriptExtensions     string // ScriptExtensions.txt
+	PropertyValueAliases string // PropertyValueAliases.txt
+	PropList             string // PropList.txt
+}
+
+func NewUnicodeData(unicodeDir string) *UnicodeData {
+	return &UnicodeData{
+		GeneralCategory:      path.Join(unicodeDir, "DerivedGeneralCategory.txt"),
+		EastAsianWidth:       path.Join(unicodeDir, "EastAsianWidth.txt"),
+		Scripts:              path.Join(unicodeDir, "Scripts.txt"),
+		ScriptExtensions:     path.Join(unicodeDir, "ScriptExtensions.txt"),
+		PropertyValueAliases: path.Join(unicodeDir, "PropertyValueAliases.txt"),
+		PropList:             path.Join(unicodeDir, "PropList.txt"),
+	}
+}
+
 type UniSetMap[T comparable] = map[T]*set.UniSet
 
 type EvalContext struct {
@@ -40,30 +60,33 @@ type EvalContext struct {
 	ScriptDef      *ScriptDef
 	ScriptMap      UniSetMap[Script]
 	ScriptXMap     UniSetMap[Script]
+	PropListDef    *PropertyDef[PropList]
+	PropListMap    UniSetMap[PropList]
 }
 
-func NewEvalContext(unicodeData string, eastAsianWidth string, aliases string, script string, scriptX string) (*EvalContext, error) {
+func NewEvalContext(data *UnicodeData) (*EvalContext, error) {
 	headers := DataHeaders{}
-	catMap, err := LoadGeneralCategoryMap(unicodeData, &headers)
+	catMap, err := LoadGeneralCategoryMap(data.GeneralCategory, &headers)
 	if err != nil {
 		return nil, err
 	}
-	eawMap, err := LoadEastAsianWidthMap(eastAsianWidth, &headers)
+	eawMap, err := LoadEastAsianWidthMap(data.EastAsianWidth, &headers)
 	if err != nil {
 		return nil, err
 	}
-	aliasMaps, err := LoadTargetAliasMap(aliases, &headers)
+	aliasMaps, err := LoadTargetAliasMap(data.PropertyValueAliases, &headers)
 	if err != nil {
 		return nil, err
 	}
-	scriptDef, scriptMap, err := LoadScriptMap(script, aliasMaps.Script(), &headers)
+	scriptDef, scriptMap, err := LoadScriptMap(data.Scripts, aliasMaps.Script(), &headers)
 	if err != nil {
 		return nil, err
 	}
-	scriptXMap, err := LoadScriptXMap(scriptX, scriptDef, aliasMaps.Script(), &headers)
+	scriptXMap, err := LoadScriptXMap(data.ScriptExtensions, scriptDef, aliasMaps.Script(), &headers)
 	if err != nil {
 		return nil, err
 	}
+	propDef, propListMap, err := LoadPropListMap(data.PropList, &headers)
 	return &EvalContext{
 		Headers:        headers,
 		CateMap:        catMap,
@@ -72,6 +95,8 @@ func NewEvalContext(unicodeData string, eastAsianWidth string, aliases string, s
 		ScriptDef:      scriptDef,
 		ScriptMap:      scriptMap,
 		ScriptXMap:     scriptXMap,
+		PropListDef:    propDef,
+		PropListMap:    propListMap,
 	}, nil
 }
 
@@ -343,8 +368,7 @@ func LoadTargetAliasMap(filename string, dbInfoList *DataHeaders) (*AliasMapReco
 		return nil, err
 	}
 	err = loader.Load(func(line string) error {
-		aliasMapRecord.Resolve(line)
-		return nil
+		return aliasMapRecord.Resolve(line)
 	})
 	if err != nil {
 		return nil, err
@@ -427,4 +451,44 @@ func LoadScriptXMap(filename string, def *ScriptDef, aliasMap *AliasMap, dbInfoL
 	}
 	dbInfoList.List = append(dbInfoList.List, loader.header)
 	return setMap, nil
+}
+
+func LoadPropListMap(filename string, dbInfoList *DataHeaders) (def *PropertyDef[PropList], setMap UniSetMap[PropList], e error) {
+	builderMap := map[PropList]*set.UniSetBuilder{}
+	nameToProp := map[string]PropList{}
+
+	// load
+	loader, err := NewDataLoader(filename)
+	if err != nil {
+		return nil, nil, err
+	}
+	err = loader.LoadProperties(func(runeRange set.RuneRange, property string) error {
+		if _, ok := nameToProp[property]; !ok { // init
+			script := PropList(len(nameToProp))
+			nameToProp[property] = script
+			builderMap[script] = &set.UniSetBuilder{}
+		}
+		script := nameToProp[property]
+		builderMap[script].AddRange(runeRange)
+		return nil
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// fix-up
+	longs := make([]string, len(nameToProp))
+	for k, v := range nameToProp {
+		longs[v] = k
+	}
+	propDef := NewPropertyDef(longs)
+
+	// build
+	setMap = map[PropList]*set.UniSet{}
+	for cate, builder := range builderMap {
+		tmp := builder.Build()
+		setMap[cate] = &tmp
+	}
+	dbInfoList.List = append(dbInfoList.List, loader.header)
+	return propDef, setMap, nil
 }

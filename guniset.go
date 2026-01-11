@@ -29,24 +29,16 @@ var StrToSetPrintOps = map[string]SetFilterOp{
 }
 
 type GUniSet struct {
-	GeneralCategory      string    // DerivedGeneralCategory.txt
-	EastAsianWidth       string    // EastAsianWidth.txt
-	Scripts              string    // Scripts.txt
-	ScriptExtensions     string    // ScriptExtensions.txt
-	PropertyValueAliases string    // PropertyValueAliases.txt
-	Writer               io.Writer // for generated Unicode set string
-	SetOperation         string
+	UnicodeData  *op.UnicodeData
+	Writer       io.Writer // for generated Unicode set string
+	SetOperation string
 }
 
 func NewGUniSetFromDir(unicodeDir string, writer io.Writer, setOperation string) (*GUniSet, error) {
 	return &GUniSet{
-		GeneralCategory:      path.Join(unicodeDir, "DerivedGeneralCategory.txt"),
-		EastAsianWidth:       path.Join(unicodeDir, "EastAsianWidth.txt"),
-		Scripts:              path.Join(unicodeDir, "Scripts.txt"),
-		ScriptExtensions:     path.Join(unicodeDir, "ScriptExtensions.txt"),
-		PropertyValueAliases: path.Join(unicodeDir, "PropertyValueAliases.txt"),
-		Writer:               writer,
-		SetOperation:         setOperation,
+		UnicodeData:  op.NewUnicodeData(unicodeDir),
+		Writer:       writer,
+		SetOperation: setOperation,
 	}, nil
 }
 
@@ -61,8 +53,7 @@ func PrintUniSet(uniSet *set.UniSet, writer io.Writer) error {
 }
 
 func (g *GUniSet) prepare() (*op.EvalContext, error) {
-	return op.NewEvalContext(g.GeneralCategory, g.EastAsianWidth,
-		g.PropertyValueAliases, g.Scripts, g.ScriptExtensions)
+	return op.NewEvalContext(g.UnicodeData)
 }
 
 func (g *GUniSet) Run(filterOp SetFilterOp) (*set.UniSet, error) {
@@ -70,7 +61,7 @@ func (g *GUniSet) Run(filterOp SetFilterOp) (*set.UniSet, error) {
 	if err != nil {
 		return nil, err
 	}
-	node, err := op.NewParser(ctx.AliasMapRecord, ctx.ScriptDef).Run([]byte(g.SetOperation))
+	node, err := op.NewParser(ctx.AliasMapRecord, ctx.ScriptDef, ctx.PropListDef).Run([]byte(g.SetOperation))
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +118,7 @@ func (g *GUniSet) Info() error {
 	if err != nil {
 		return err
 	}
-	_, err = fmt.Fprintf(g.Writer, "GUNISET_DIR: %s\n", path.Dir(g.GeneralCategory))
+	_, err = fmt.Fprintf(g.Writer, "GUNISET_DIR: %s\n", path.Dir(g.UnicodeData.GeneralCategory))
 	if err != nil {
 		return err
 	}
@@ -154,6 +145,12 @@ func (g *GUniSet) EnumerateProperty() error {
 	if op.IsScriptPrefix(g.SetOperation) || op.IsScriptExtensionPrefix(g.SetOperation) {
 		for sc := range ctx.ScriptDef.EachScript {
 			_, _ = fmt.Fprintln(g.Writer, ctx.ScriptDef.Format(sc, ctx.AliasMapRecord.Script()))
+		}
+		return nil
+	}
+	if op.IsPropListPrefix(g.SetOperation) {
+		for prop := range ctx.PropListDef.EachProperty {
+			_, _ = fmt.Fprintln(g.Writer, ctx.PropListDef.Format(prop))
 		}
 		return nil
 	}
@@ -196,7 +193,7 @@ func fetchUnicodeData(rev string, output string) error {
 
 	targets := []string{
 		"extracted/DerivedGeneralCategory.txt", "EastAsianWidth.txt", "PropertyValueAliases.txt",
-		"Scripts.txt", "ScriptExtensions.txt",
+		"Scripts.txt", "ScriptExtensions.txt", "PropList.txt",
 	}
 	if rev == "latest" {
 		rev = "UCD/latest"
