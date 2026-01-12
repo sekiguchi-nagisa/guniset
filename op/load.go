@@ -87,6 +87,9 @@ func NewEvalContext(data *UnicodeData) (*EvalContext, error) {
 		return nil, err
 	}
 	propDef, propListMap, err := LoadPropListMap(data.PropList, &headers)
+	if err != nil {
+		return nil, err
+	}
 	return &EvalContext{
 		Headers:        headers,
 		CateMap:        catMap,
