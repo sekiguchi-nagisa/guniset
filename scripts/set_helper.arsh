@@ -1,0 +1,40 @@
+
+type Range(f: String, l: String) {
+    let first = $f
+    let last = $l
+    let firstN = $first.toInt(16)!
+    let lastN = $last.toInt(16)!
+}
+
+function try_merge(o : Range) : Range? for Range {
+    if $this.lastN + 1 == $o.firstN {
+        # merge range
+        return new Range($this.first, $o.last)
+    }
+    return $none
+}
+
+function minimize(map: [String: [Range]]) {
+    var keys : [String]
+    for key, _ in $map {
+        $keys.add($key)
+    }
+
+    for key in $keys {
+        var new_values: [Range]
+        var old_values = $map[$key]
+        for value in $old_values {
+            if $new_values.empty() {
+                $new_values.add($value)
+                continue
+            }
+            if let v = $new_values.peek().try_merge($value) {
+                $new_values.pop()
+                $new_values.push($v)
+                continue
+            }
+            $new_values.add($value)
+        }
+        $map[$key] = $new_values
+    }
+}

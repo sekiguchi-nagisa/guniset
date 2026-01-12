@@ -1,5 +1,7 @@
 #!/usr/bin/env arsh
 
+source $SCRIPT_DIR/set_helper.arsh
+
 # generate golden files for script (except for 'Unknown')
 
 var REV="16.0.0"
@@ -10,26 +12,6 @@ test -f ScriptExtensions.txt ||
   curl "https://www.unicode.org/Public/$REV/ucd/ScriptExtensions.txt" \
     > ./ScriptExtensions.txt
 
-type Range {
-  let first: String
-  let last: String
-  let firstN: Int
-  let lastN: Int
-}
-
-function try_merge(o : Range) : Range? for Range {
-    if $this.lastN + 1 == $o.firstN {
-        # merge range
-        return new Range(
-            $this.first,
-            $o.last,
-            $this.firstN,
-            $o.lastN
-        )
-    }
-    return $none
-}
-
 var scx_map : [String: [Range]]
 var count =0 
 for line in new FD('./ScriptExtensions.txt') {
@@ -38,13 +20,11 @@ for line in new FD('./ScriptExtensions.txt') {
   var matched = $/^(?<first>[0-9A-F]+)(\.\.(?<last>[0-9A-F]+))?[ ]*;(?<scx>( +[a-zA-Z][_a-zA-Z0-9]*)+) +#.+$/.match($line) ?? {echo failed at $count: $line; exit 1;}
   var first = $matched.named('first')!
   var last =  $matched.named('last') ?? $first
-  var firstN = $first.toInt(16)!
-  var lastN = $last.toInt(16)!
   var scxs = $matched.named('scx')!
   for scx in $scxs.split(' ') {
     $scx.empty() && continue
     $scx_map.putIfAbsent($scx, new [Range]())
-    $scx_map[$scx].add(new Range($first, $last, $firstN, $lastN))
+    $scx_map[$scx].add(new Range($first, $last))
   }
 }
 
@@ -53,29 +33,8 @@ for _, values in $scx_map {
   assert ! $values.empty()
 }
 
-# merge
-var scxs : [String]
-for scx, _ in $scx_map {
-  $scxs.add($scx)
-}
-
-for scx in $scxs {
-  var new_values: [Range]
-  var old_values = $scx_map[$scx]
-  for value in $old_values {
-    if $new_values.empty() {
-      $new_values.add($value)
-      continue
-    }
-    if let v = $new_values.peek().try_merge($value) {
-      $new_values.pop()
-      $new_values.push($v)
-      continue
-    }
-    $new_values.add($value)
-  }
-  $scx_map[$scx] = $new_values
-}
+# minimize
+$minimize($scx_map)
 
 # output
 for scx, values in $scx_map {
