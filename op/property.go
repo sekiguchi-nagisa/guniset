@@ -266,12 +266,12 @@ func IsScriptExtensionPrefix(s string) bool {
 }
 
 // PropertyDef common Unicode property definition
-type PropertyDef[T int] struct {
+type PropertyDef[T ~int] struct {
 	propertyToName []string
 	nameToProperty map[string]T
 }
 
-func NewPropertyDef[T int](names []string) *PropertyDef[T] {
+func NewPropertyDef[T ~int](names []string) *PropertyDef[T] {
 	ret := &PropertyDef[T]{
 		propertyToName: slices.Clone(names),
 		nameToProperty: make(map[string]T),
@@ -306,7 +306,7 @@ func (d *PropertyDef[T]) Format(p T) string {
 	return d.GetName(p)
 }
 
-type PropList = int
+type PropList int
 
 const PropListPrefix = "prop"
 

@@ -484,7 +484,7 @@ func LoadPropListMap(filename string, dbInfoList *DataHeaders) (def *PropertyDef
 	for k, v := range nameToProp {
 		longs[v] = k
 	}
-	propDef := NewPropertyDef(longs)
+	propDef := NewPropertyDef[PropList](longs)
 
 	// build
 	setMap = map[PropList]*set.UniSet{}
