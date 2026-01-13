@@ -12,7 +12,7 @@ test -f PropertyValueAliases.txt ||
   curl "https://www.unicode.org/Public/$REV/ucd/PropertyValueAliases.txt" \
     > ./PropertyValueAliases.txt
 
-## erxtract property
+## extract property
 var propertySet : [String:Bool]
 var count =0 
 for line in new FD('./Scripts.txt') {

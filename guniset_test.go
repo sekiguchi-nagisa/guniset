@@ -106,3 +106,11 @@ func TestPrintScript(t *testing.T) {
 func TestPrintPropList(t *testing.T) {
 	runGoldenTest(t, "unicode16_proplist", SetPrintAll)
 }
+
+func TestPrintDerivedCoreProperty(t *testing.T) {
+	runGoldenTest(t, "unicode16_dcp", SetPrintAll)
+}
+
+func TestPrintEmoji(t *testing.T) {
+	runGoldenTest(t, "unicode16_emoji", SetPrintAll)
+}

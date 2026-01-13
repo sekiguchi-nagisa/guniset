@@ -8,7 +8,7 @@ test -f ./PropList.txt ||
   curl "https://www.unicode.org/Public/$REV/ucd/PropList.txt" \
     > ./PropList.txt
 
-## erxtract property
+## extract property
 var propertySet : [String:Bool]
 var count =0 
 for line in new FD('./PropList.txt') {

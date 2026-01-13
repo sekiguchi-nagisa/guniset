@@ -260,7 +260,11 @@ func (d *DataLoader) formatErr(e error) error {
 }
 
 func parseEntry(line string) (runeRange set.RuneRange, property string, err error) {
+	// line: 1D167..1D169  ; InCB; Extend # Mn
+	// line: 1EE5B         ; Grapheme_Base # Lo
+
 	// extract runeRange
+	line = strings.TrimSpace(strings.Split(line, "#")[0])
 	ss := strings.Split(line, ";")
 	cc := strings.Split(strings.TrimSpace(ss[0]), "..")
 	runeRange.First, err = set.ParseRune(cc[0])
@@ -276,7 +280,11 @@ func parseEntry(line string) (runeRange set.RuneRange, property string, err erro
 	}
 
 	// extract property
-	property = strings.TrimSpace(strings.Split(strings.TrimSpace(ss[1]), "#")[0])
+	var pp []string
+	for _, s := range ss[1:] {
+		pp = append(pp, strings.TrimSpace(s))
+	}
+	property = strings.Join(pp, "_")
 	return
 }
 

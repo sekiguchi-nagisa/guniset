@@ -1,0 +1,42 @@
+#!/usr/bin/env arsh
+
+source $SCRIPT_DIR/set_helper.arsh
+
+# generate golden files for script (except for 'Unknown')
+
+var REV="16.0.0"
+
+let output_dir = $1.realpath()
+
+test -f ./emoji-data.txt ||
+  curl "https://www.unicode.org/Public/$REV/ucd/emoji/emoji-data.txt" \
+    > ./emoji-data.txt
+
+var prop_map : [String: [Range]]
+var count =0 
+for line in new FD('./emoji-data.txt') {
+  $count++
+  ($line.empty() || $line.startsWith('#')) && continue
+  var matched = $/^(?<first>[0-9A-F]+)(\.\.(?<last>[0-9A-F]+))?[ ]*;[ ]+(?<prop>([a-zA-Z][_a-zA-Z0-9]*)) *#.+$/.match($line) ?? {echo failed at $count: $line; exit 1;}
+  var first = $matched.named('first')!
+  var last =  $matched.named('last') ?? $first
+  var sc = $matched.named('prop')!
+  $prop_map.putIfAbsent($sc, new [Range]())
+  $prop_map[$sc].add(new Range($first, $last))
+}
+
+# check cate
+for _, values in $prop_map {
+  assert ! $values.empty()
+}
+
+# merge
+$minimize($prop_map)
+
+# output
+for prop, values in $prop_map {
+  for v in $values {
+    echo "{ 0x${v.first}, 0x${v.last} },"
+  } with > $output_dir/emoji_${$prop.lower()}.golden
+  echo "emoji:$prop" > $output_dir/emoji_${$prop.lower()}.test
+}
