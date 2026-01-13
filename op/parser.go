@@ -73,15 +73,14 @@ Next:
 
 type Parser struct {
 	aliasMaps *AliasMapRecord
-	scriptDef *ScriptDef
-	propDef   *PropertyDef[PropList]
+	defRecord *DefRecord
 	tokens    []Token
 	pos       int
 	err       error
 }
 
-func NewParser(maps *AliasMapRecord, scriptDef *ScriptDef, propDef *PropertyDef[PropList]) *Parser {
-	return &Parser{aliasMaps: maps, scriptDef: scriptDef, propDef: propDef}
+func NewParser(maps *AliasMapRecord, defRecord *DefRecord) *Parser {
+	return &Parser{aliasMaps: maps, defRecord: defRecord}
 }
 
 func syntaxErr(msg string) error {
@@ -194,11 +193,11 @@ func (p *Parser) parsePrimary() Node {
 				properties = append(properties, v)
 			})
 			return NewEastAsianWidthNode(properties)
-		} else if (IsScriptPrefix(prefix.text) || IsScriptExtensionPrefix(prefix.text)) && p.scriptDef != nil {
+		} else if (IsScriptPrefix(prefix.text) || IsScriptExtensionPrefix(prefix.text)) && p.defRecord != nil {
 			p.expect(TokenColon)
 			var properties []Script
 			p.parsePropertySeq(func(s string) {
-				v, err := p.scriptDef.Parse(s, p.aliasMaps.Script())
+				v, err := p.defRecord.ScriptDef.Parse(s, p.aliasMaps.Script())
 				if err != nil {
 					p.error(err.Error())
 				}
@@ -208,19 +207,51 @@ func (p *Parser) parsePrimary() Node {
 				return NewScriptXNode(properties)
 			}
 			return NewScriptNode(properties)
-		} else if IsPropListPrefix(prefix.text) && p.propDef != nil {
+		} else if IsPropListPrefix(prefix.text) && p.defRecord != nil {
 			p.expect(TokenColon)
 			var properties []PropList
 			p.parsePropertySeq(func(s string) {
-				v, err := p.propDef.Parse(s)
+				v, err := p.defRecord.PropListDef.Parse(s)
 				if err != nil {
 					p.error(err.Error())
 				}
 				properties = append(properties, v)
 			})
-			return NewPropNode(properties)
+			return NewPropertyNode(properties, func(ctx *EvalContext, p PropList) (*set.UniSet, bool) {
+				s, k := ctx.PropListMap[p]
+				return s, k
+			})
+		} else if IsDerivedCorePropertyPrefix(prefix.text) && p.defRecord != nil {
+			p.expect(TokenColon)
+			var properties []DerivedCoreProperty
+			p.parsePropertySeq(func(s string) {
+				v, err := p.defRecord.DerivedCorePropDef.Parse(s)
+				if err != nil {
+					p.error(err.Error())
+				}
+				properties = append(properties, v)
+			})
+			return NewPropertyNode(properties, func(ctx *EvalContext, p DerivedCoreProperty) (*set.UniSet, bool) {
+				s, k := ctx.DerivedCorePropMap[p]
+				return s, k
+			})
+		} else if IsEmojiPrefix(prefix.text) && p.defRecord != nil {
+			p.expect(TokenColon)
+			var properties []Emoji
+			p.parsePropertySeq(func(s string) {
+				v, err := p.defRecord.EmojiDef.Parse(s)
+				if err != nil {
+					p.error(err.Error())
+				}
+				properties = append(properties, v)
+			})
+			return NewPropertyNode(properties, func(ctx *EvalContext, p Emoji) (*set.UniSet, bool) {
+				s, k := ctx.EmojiMap[p]
+				return s, k
+			})
 		} else {
-			p.error(fmt.Sprintf("unknown property prefix: %s, must be `cat`, `gc`, `ea`, `eaw`, `sc`, `scx` or `prop`", prefix.text))
+			p.error(fmt.Sprintf("unknown property prefix: %s, "+
+				"must be `cat`, `gc`, `ea`, `eaw`, `sc`, `scx`, `prop`, `dcp` or `emoji`", prefix.text))
 		}
 	case TokenRune:
 		first := p.parseRune()

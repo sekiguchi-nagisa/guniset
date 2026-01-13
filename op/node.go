@@ -101,7 +101,7 @@ func (e *ScriptNode) Eval(context *EvalContext) set.UniSet {
 		} else {
 			if s, ok := context.ScriptMap[property]; ok {
 				builder.AddSet(s)
-			} else if property == context.ScriptDef.Unknown() {
+			} else if property == context.DefRecord.ScriptDef.Unknown() {
 				builder.AddSet(context.FillScriptUnknown())
 			}
 		}
@@ -109,22 +109,23 @@ func (e *ScriptNode) Eval(context *EvalContext) set.UniSet {
 	return builder.Build()
 }
 
-type PropNode struct { // prop:Dash
-	properties []PropList
+type PropertyNode[T ~int] struct {
+	properties []T
+	callback   func(*EvalContext, T) (*set.UniSet, bool)
 }
 
-func NewPropNode(properties []PropList) *PropNode {
-	node := PropNode{properties: properties}
+func NewPropertyNode[T ~int](properties []T, callback func(*EvalContext, T) (*set.UniSet, bool)) *PropertyNode[T] {
+	node := PropertyNode[T]{properties: properties, callback: callback}
 	node.properties = properties[0:]
 	slices.Sort(node.properties)
 	node.properties = slices.Compact(node.properties)
 	return &node
 }
 
-func (p *PropNode) Eval(context *EvalContext) set.UniSet {
+func (p *PropertyNode[T]) Eval(context *EvalContext) set.UniSet {
 	builder := set.UniSetBuilder{}
 	for _, property := range p.properties {
-		if s, ok := context.PropListMap[property]; ok {
+		if s, ok := p.callback(context, property); ok {
 			builder.AddSet(s)
 		}
 	}

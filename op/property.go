@@ -313,3 +313,19 @@ const PropListPrefix = "prop"
 func IsPropListPrefix(s string) bool {
 	return s == PropListPrefix
 }
+
+type DerivedCoreProperty int
+
+const DerivedCorePropPrefix = "dcp"
+
+func IsDerivedCorePropertyPrefix(s string) bool {
+	return s == DerivedCorePropPrefix
+}
+
+type Emoji int
+
+const EmojiPrefix = "emoji"
+
+func IsEmojiPrefix(s string) bool {
+	return s == EmojiPrefix
+}

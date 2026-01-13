@@ -31,37 +31,49 @@ func (d *DataHeaders) Print(writer io.Writer) error {
 }
 
 type UnicodeData struct {
-	GeneralCategory      string // DerivedGeneralCategory.txt
-	EastAsianWidth       string // EastAsianWidth.txt
-	Scripts              string // Scripts.txt
-	ScriptExtensions     string // ScriptExtensions.txt
-	PropertyValueAliases string // PropertyValueAliases.txt
-	PropList             string // PropList.txt
+	GeneralCategory       string // DerivedGeneralCategory.txt
+	EastAsianWidth        string // EastAsianWidth.txt
+	Scripts               string // Scripts.txt
+	ScriptExtensions      string // ScriptExtensions.txt
+	PropertyValueAliases  string // PropertyValueAliases.txt
+	PropList              string // PropList.txt
+	DerivedCoreProperties string // DerivedCoreProperties.txt
+	EmojiData             string // emoji-data.txt
 }
 
 func NewUnicodeData(unicodeDir string) *UnicodeData {
 	return &UnicodeData{
-		GeneralCategory:      path.Join(unicodeDir, "DerivedGeneralCategory.txt"),
-		EastAsianWidth:       path.Join(unicodeDir, "EastAsianWidth.txt"),
-		Scripts:              path.Join(unicodeDir, "Scripts.txt"),
-		ScriptExtensions:     path.Join(unicodeDir, "ScriptExtensions.txt"),
-		PropertyValueAliases: path.Join(unicodeDir, "PropertyValueAliases.txt"),
-		PropList:             path.Join(unicodeDir, "PropList.txt"),
+		GeneralCategory:       path.Join(unicodeDir, "DerivedGeneralCategory.txt"),
+		EastAsianWidth:        path.Join(unicodeDir, "EastAsianWidth.txt"),
+		Scripts:               path.Join(unicodeDir, "Scripts.txt"),
+		ScriptExtensions:      path.Join(unicodeDir, "ScriptExtensions.txt"),
+		PropertyValueAliases:  path.Join(unicodeDir, "PropertyValueAliases.txt"),
+		PropList:              path.Join(unicodeDir, "PropList.txt"),
+		DerivedCoreProperties: path.Join(unicodeDir, "DerivedCoreProperties.txt"),
+		EmojiData:             path.Join(unicodeDir, "emoji-data.txt"),
 	}
 }
 
 type UniSetMap[T comparable] = map[T]*set.UniSet
 
+type DefRecord struct {
+	ScriptDef          *ScriptDef
+	PropListDef        *PropertyDef[PropList]
+	DerivedCorePropDef *PropertyDef[DerivedCoreProperty]
+	EmojiDef           *PropertyDef[Emoji]
+}
+
 type EvalContext struct {
-	Headers        DataHeaders
-	CateMap        UniSetMap[GeneralCategory]
-	EawMap         UniSetMap[EastAsianWidth]
-	AliasMapRecord *AliasMapRecord
-	ScriptDef      *ScriptDef
-	ScriptMap      UniSetMap[Script]
-	ScriptXMap     UniSetMap[Script]
-	PropListDef    *PropertyDef[PropList]
-	PropListMap    UniSetMap[PropList]
+	Headers            DataHeaders
+	CateMap            UniSetMap[GeneralCategory]
+	EawMap             UniSetMap[EastAsianWidth]
+	AliasMapRecord     *AliasMapRecord
+	DefRecord          DefRecord
+	ScriptMap          UniSetMap[Script]
+	ScriptXMap         UniSetMap[Script]
+	PropListMap        UniSetMap[PropList]
+	DerivedCorePropMap UniSetMap[DerivedCoreProperty]
+	EmojiMap           UniSetMap[Emoji]
 }
 
 func NewEvalContext(data *UnicodeData) (*EvalContext, error) {
@@ -86,7 +98,15 @@ func NewEvalContext(data *UnicodeData) (*EvalContext, error) {
 	if err != nil {
 		return nil, err
 	}
-	propDef, propListMap, err := LoadPropListMap(data.PropList, &headers)
+	propDef, propListMap, err := LoadPropertyMap[PropList](data.PropList, &headers)
+	if err != nil {
+		return nil, err
+	}
+	derivedCorePropDef, derivedCorePropMap, err := LoadPropertyMap[DerivedCoreProperty](data.DerivedCoreProperties, &headers)
+	if err != nil {
+		return nil, err
+	}
+	emojiDef, emojiMap, err := LoadPropertyMap[Emoji](data.EmojiData, &headers)
 	if err != nil {
 		return nil, err
 	}
@@ -95,11 +115,17 @@ func NewEvalContext(data *UnicodeData) (*EvalContext, error) {
 		CateMap:        catMap,
 		EawMap:         eawMap,
 		AliasMapRecord: aliasMaps,
-		ScriptDef:      scriptDef,
-		ScriptMap:      scriptMap,
-		ScriptXMap:     scriptXMap,
-		PropListDef:    propDef,
-		PropListMap:    propListMap,
+		DefRecord: DefRecord{
+			ScriptDef:          scriptDef,
+			PropListDef:        propDef,
+			DerivedCorePropDef: derivedCorePropDef,
+			EmojiDef:           emojiDef,
+		},
+		ScriptMap:          scriptMap,
+		ScriptXMap:         scriptXMap,
+		PropListMap:        propListMap,
+		DerivedCorePropMap: derivedCorePropMap,
+		EmojiMap:           emojiMap,
 	}, nil
 }
 
@@ -122,21 +148,21 @@ func (e *EvalContext) FillEawN() *set.UniSet {
 }
 
 func (e *EvalContext) FillScriptUnknown() *set.UniSet {
-	scriptSet := e.ScriptMap[e.ScriptDef.Unknown()]
+	scriptSet := e.ScriptMap[e.DefRecord.ScriptDef.Unknown()]
 	if scriptSet != nil {
 		return scriptSet
 	}
 	tmpSet := set.NewUniSetAll()
 	builder := set.UniSetBuilder{}
-	for sc := range e.ScriptDef.EachScript {
-		if sc != e.ScriptDef.Unknown() {
+	for sc := range e.DefRecord.ScriptDef.EachScript {
+		if sc != e.DefRecord.ScriptDef.Unknown() {
 			builder.AddSet(e.ScriptMap[sc])
 		}
 	}
 	removing := builder.Build()
 	tmpSet.RemoveSet(&removing)
-	e.ScriptMap[e.ScriptDef.Unknown()] = &tmpSet
-	return e.ScriptMap[e.ScriptDef.Unknown()]
+	e.ScriptMap[e.DefRecord.ScriptDef.Unknown()] = &tmpSet
+	return e.ScriptMap[e.DefRecord.ScriptDef.Unknown()]
 }
 
 func formatScriptX(def *ScriptDef, scx []Script) string {
@@ -155,7 +181,7 @@ func formatScriptX(def *ScriptDef, scx []Script) string {
 func (e *EvalContext) Query(r rune, writer io.Writer) error {
 	cat := CAT_Cn
 	eaw := EAW_N
-	sc := e.ScriptDef.Unknown()
+	sc := e.DefRecord.ScriptDef.Unknown()
 	var scx []Script
 	for cc, uniSet := range e.CateMap {
 		if uniSet.Find(r) {
@@ -184,8 +210,8 @@ func (e *EvalContext) Query(r rune, writer io.Writer) error {
 		"GeneralCategory: %s\nEastAsianWidth: %s\nScript: %s\nScriptExtension: %s\n", r,
 		cat.Format(e.AliasMapRecord.Category()),
 		eaw.Format(e.AliasMapRecord.Eaw()),
-		e.ScriptDef.Format(sc, e.AliasMapRecord.Script()),
-		formatScriptX(e.ScriptDef, scx))
+		e.DefRecord.ScriptDef.Format(sc, e.AliasMapRecord.Script()),
+		formatScriptX(e.DefRecord.ScriptDef, scx))
 	return err
 }
 
@@ -456,9 +482,9 @@ func LoadScriptXMap(filename string, def *ScriptDef, aliasMap *AliasMap, dbInfoL
 	return setMap, nil
 }
 
-func LoadPropListMap(filename string, dbInfoList *DataHeaders) (def *PropertyDef[PropList], setMap UniSetMap[PropList], e error) {
-	builderMap := map[PropList]*set.UniSetBuilder{}
-	nameToProp := map[string]PropList{}
+func LoadPropertyMap[T ~int](filename string, dbInfoList *DataHeaders) (def *PropertyDef[T], setMap UniSetMap[T], e error) {
+	builderMap := map[T]*set.UniSetBuilder{}
+	nameToProp := map[string]T{}
 
 	// load
 	loader, err := NewDataLoader(filename)
@@ -467,7 +493,7 @@ func LoadPropListMap(filename string, dbInfoList *DataHeaders) (def *PropertyDef
 	}
 	err = loader.LoadProperties(func(runeRange set.RuneRange, property string) error {
 		if _, ok := nameToProp[property]; !ok { // init
-			script := PropList(len(nameToProp))
+			script := T(len(nameToProp))
 			nameToProp[property] = script
 			builderMap[script] = &set.UniSetBuilder{}
 		}
@@ -484,10 +510,10 @@ func LoadPropListMap(filename string, dbInfoList *DataHeaders) (def *PropertyDef
 	for k, v := range nameToProp {
 		longs[v] = k
 	}
-	propDef := NewPropertyDef[PropList](longs)
+	propDef := NewPropertyDef[T](longs)
 
 	// build
-	setMap = map[PropList]*set.UniSet{}
+	setMap = map[T]*set.UniSet{}
 	for cate, builder := range builderMap {
 		tmp := builder.Build()
 		setMap[cate] = &tmp

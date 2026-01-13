@@ -61,7 +61,7 @@ func (g *GUniSet) Run(filterOp SetFilterOp) (*set.UniSet, error) {
 	if err != nil {
 		return nil, err
 	}
-	node, err := op.NewParser(ctx.AliasMapRecord, ctx.ScriptDef, ctx.PropListDef).Run([]byte(g.SetOperation))
+	node, err := op.NewParser(ctx.AliasMapRecord, &ctx.DefRecord).Run([]byte(g.SetOperation))
 	if err != nil {
 		return nil, err
 	}
@@ -143,14 +143,26 @@ func (g *GUniSet) EnumerateProperty() error {
 		return nil
 	}
 	if op.IsScriptPrefix(g.SetOperation) || op.IsScriptExtensionPrefix(g.SetOperation) {
-		for sc := range ctx.ScriptDef.EachScript {
-			_, _ = fmt.Fprintln(g.Writer, ctx.ScriptDef.Format(sc, ctx.AliasMapRecord.Script()))
+		for sc := range ctx.DefRecord.ScriptDef.EachScript {
+			_, _ = fmt.Fprintln(g.Writer, ctx.DefRecord.ScriptDef.Format(sc, ctx.AliasMapRecord.Script()))
 		}
 		return nil
 	}
 	if op.IsPropListPrefix(g.SetOperation) {
-		for prop := range ctx.PropListDef.EachProperty {
-			_, _ = fmt.Fprintln(g.Writer, ctx.PropListDef.Format(prop))
+		for prop := range ctx.DefRecord.PropListDef.EachProperty {
+			_, _ = fmt.Fprintln(g.Writer, ctx.DefRecord.PropListDef.Format(prop))
+		}
+		return nil
+	}
+	if op.IsDerivedCorePropertyPrefix(g.SetOperation) {
+		for prop := range ctx.DefRecord.DerivedCorePropDef.EachProperty {
+			_, _ = fmt.Fprintln(g.Writer, ctx.DefRecord.DerivedCorePropDef.Format(prop))
+		}
+		return nil
+	}
+	if op.IsEmojiPrefix(g.SetOperation) {
+		for prop := range ctx.DefRecord.EmojiDef.EachProperty {
+			_, _ = fmt.Fprintln(g.Writer, ctx.DefRecord.EmojiDef.Format(prop))
 		}
 		return nil
 	}
@@ -193,7 +205,8 @@ func fetchUnicodeData(rev string, output string) error {
 
 	targets := []string{
 		"extracted/DerivedGeneralCategory.txt", "EastAsianWidth.txt", "PropertyValueAliases.txt",
-		"Scripts.txt", "ScriptExtensions.txt", "PropList.txt",
+		"Scripts.txt", "ScriptExtensions.txt", "PropList.txt", "DerivedCoreProperties.txt",
+		"emoji/emoji-data.txt",
 	}
 	if rev == "latest" {
 		rev = "UCD/latest"

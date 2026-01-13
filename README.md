@@ -22,6 +22,9 @@ having the following data
 * ``PropertyValueAliases.txt``
 * ``Scripts.txt``
 * ``ScriptExtensions.txt``
+* ``PropList.txt``
+* ``DerivedCoreProperties.txt``
+* ``emoji-data.txt``
 
 ## Set Operation
 
@@ -39,6 +42,9 @@ having the following data
 * ``eaw:F,W``: East Asian Width set
 * ``sc:Common``: Script set
 * ``scx:Grek``: Script Extension set
+* ``prop:White_Space``: Unicode property defined in ``PropList.txt``
+* ``dcp:Grapheme_Base``: Unicode property defined in ``DerivedCoreProperties.txt``
+* ``emoji:Emoji_Presentation``: Unicode property defined in ``emoji-data.txt``
 * ``U+1234``, ``0..1FFF``: Unicode code point
 
 ### Grammar
@@ -62,6 +68,9 @@ PrimaryExpression
     | ('eaw' | 'ea') ':' EawList
     | 'sc' ':' ScriptList
     | 'scx' ':' ScriptList        # for script extensions
+    | 'prop' ':' PropList         # for unicode properties
+    | 'dcp' ':' PropList           # for derived core properties
+    | 'emoji' ':' PropList         # for emoji
     | CodePoint '..' CodePoint
     | CodePoint
     | '(' Epxression ')'
@@ -93,6 +102,13 @@ ScriptList
 
 Script
     : <script values and aliases>
+
+PropList
+    : Prop
+    | Prop ',' PropList
+
+Prop
+    : <property values>
 
 CodePoint
     : 'U+' [0-9a-fA-F]+

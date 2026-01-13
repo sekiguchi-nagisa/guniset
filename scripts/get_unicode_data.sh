@@ -22,6 +22,12 @@ curl "https://www.unicode.org/Public/$REV/ucd/ScriptExtensions.txt" \
 curl "https://www.unicode.org/Public/$REV/ucd/PropList.txt" \
   > ./unicode_dir/PropList.txt || { echo failed; exit 1; }
 
+curl "https://www.unicode.org/Public/$REV/ucd/DerivedCoreProperties.txt" \
+  > ./unicode_dir/DerivedCoreProperties.txt || { echo failed; exit 1; }
+
+curl "https://www.unicode.org/Public/$REV/ucd/emoji/emoji-data.txt" \
+  > ./unicode_dir/emoji-data.txt || { echo failed; exit 1; }
+
 curl "https://www.unicode.org/Public/$REV/ucd/ReadMe.txt" \
   > ./unicode_dir/ReadMe.txt || { echo failed; exit 1; }
 
