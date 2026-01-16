@@ -22,10 +22,11 @@ type CLIInfo struct {
 }
 
 type CLISample struct {
-	Set    string  `arg:"" required:"" help:"Specify set operation"`
-	Filter string  `optional:"" help:"Filter output (all: include all, bmp: only bmp, non-bmp: exclude bmp)" enum:"all,,bmp,non-bmp" default:"all"`
-	Limit  int     `optional:"" help:"Limit sampling count" default:"5"`
-	Seed   *uint64 `optional:"" help:"Specify random seed. if not specified, use time.Now().UnixNano()"`
+	Set    string   `arg:"" required:"" help:"Specify set operation"`
+	Filter string   `optional:"" help:"Filter output (all: include all, bmp: only bmp, non-bmp: exclude bmp)" enum:"all,,bmp,non-bmp" default:"all"`
+	Limit  *int     `optional:"" xor:"g" help:"Limit sampling count (default: 5)"`
+	Ratio  *float64 `optional:"" xor:"g" help:"Sampling ratio (up to 1.0)"`
+	Seed   *uint64  `optional:"" help:"Specify random seed. if not specified, use time.Now().UnixNano()"`
 }
 
 type CLIEnum struct {
@@ -140,7 +141,7 @@ func (c *CLISample) Run() error {
 	} else {
 		seed = uint64(time.Now().UnixNano())
 	}
-	return g.RunAndSampling(seed, printOp, c.Limit)
+	return g.RunAndSampling(seed, printOp, c.Limit, c.Ratio)
 }
 
 func (c *CLIEnum) Run() error {

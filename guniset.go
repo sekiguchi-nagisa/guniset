@@ -88,13 +88,20 @@ func (g *GUniSet) RunAndPrint(filterOp SetFilterOp) error {
 	return PrintUniSet(uniSet, g.Writer)
 }
 
-func (g *GUniSet) RunAndSampling(seed uint64, filterOp SetFilterOp, limit int) error {
+func (g *GUniSet) RunAndSampling(seed uint64, filterOp SetFilterOp, limit *int, ratio *float64) error {
 	uniSet, err := g.Run(filterOp)
 	if err != nil {
 		return err
 	}
+	actualLimit := 5
+	if limit != nil {
+		actualLimit = *limit
+	} else if ratio != nil {
+		actualLimit = int(*ratio * float64(uniSet.Len()))
+	}
+
 	rnd := rand.New(rand.NewPCG(seed, 42))
-	sampled := uniSet.Sample(rnd, limit)
+	sampled := uniSet.Sample(rnd, actualLimit)
 	for r := range sampled.Iter {
 		_, _ = fmt.Fprintf(g.Writer, "U+%04X\n", r)
 	}

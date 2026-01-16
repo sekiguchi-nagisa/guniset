@@ -238,14 +238,32 @@ func (u *UniSet) String() string {
 }
 
 func (u *UniSet) Sample(rnd *rand.Rand, limit int) UniSet {
-	runeSet := map[rune]struct{}{}
-	limit = min(limit, len(u.runes)/2+len(u.runes)%2)
-	for len(runeSet) < limit {
-		runeSet[u.runes[rnd.IntN(len(u.runes))]] = struct{}{}
+	if limit <= 0 {
+		return UniSet{}
 	}
+	if limit >= len(u.runes) {
+		return u.Copy()
+	}
+
+	runeSet := map[rune]struct{}{}
 	builder := UniSetBuilder{}
-	for r := range runeSet {
-		builder.Add(r)
+	if limit > u.Len()/2 {
+		removeCount := u.Len() - limit
+		for len(runeSet) < removeCount {
+			runeSet[u.runes[rnd.IntN(len(u.runes))]] = struct{}{}
+		}
+		for _, r := range u.runes {
+			if _, ok := runeSet[r]; !ok {
+				builder.Add(r)
+			}
+		}
+	} else {
+		for len(runeSet) < limit {
+			runeSet[u.runes[rnd.IntN(len(u.runes))]] = struct{}{}
+		}
+		for r := range runeSet {
+			builder.Add(r)
+		}
 	}
 	return builder.Build()
 }

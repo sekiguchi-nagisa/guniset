@@ -142,8 +142,8 @@ func TestSample(t *testing.T) {
 	}
 	set := builder.Build()
 	rnd := rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64()))
-	sampled := set.Sample(rnd, set.Len())
-	assert.Equal(t, set.Len()/2, sampled.Len(), "sample size")
+	sampled := set.Sample(rnd, set.Len()+10)
+	assert.Equal(t, set.Len(), sampled.Len(), "sample size")
 	for r := range sampled.Iter {
 		assert.True(t, set.Find(r), fmt.Sprintf("rune U+%04x", r))
 	}
