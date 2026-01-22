@@ -329,3 +329,11 @@ const EmojiPrefix = "emoji"
 func IsEmojiPrefix(s string) bool {
 	return s == EmojiPrefix
 }
+
+type DerivedBinaryProperty int
+
+const DerivedBinaryPropPrefix = "dbp"
+
+func IsDerivedBinaryPropertyPrefix(s string) bool {
+	return s == DerivedBinaryPropPrefix
+}

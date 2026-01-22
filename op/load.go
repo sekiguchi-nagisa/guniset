@@ -31,49 +31,53 @@ func (d *DataHeaders) Print(writer io.Writer) error {
 }
 
 type UnicodeData struct {
-	GeneralCategory       string // DerivedGeneralCategory.txt
-	EastAsianWidth        string // EastAsianWidth.txt
-	Scripts               string // Scripts.txt
-	ScriptExtensions      string // ScriptExtensions.txt
-	PropertyValueAliases  string // PropertyValueAliases.txt
-	PropList              string // PropList.txt
-	DerivedCoreProperties string // DerivedCoreProperties.txt
-	EmojiData             string // emoji-data.txt
+	GeneralCategory         string // DerivedGeneralCategory.txt
+	EastAsianWidth          string // EastAsianWidth.txt
+	Scripts                 string // Scripts.txt
+	ScriptExtensions        string // ScriptExtensions.txt
+	PropertyValueAliases    string // PropertyValueAliases.txt
+	PropList                string // PropList.txt
+	DerivedCoreProperties   string // DerivedCoreProperties.txt
+	EmojiData               string // emoji-data.txt
+	DerivedBinaryProperties string // DerivedBinaryProperties.txt
 }
 
 func NewUnicodeData(unicodeDir string) *UnicodeData {
 	return &UnicodeData{
-		GeneralCategory:       path.Join(unicodeDir, "DerivedGeneralCategory.txt"),
-		EastAsianWidth:        path.Join(unicodeDir, "EastAsianWidth.txt"),
-		Scripts:               path.Join(unicodeDir, "Scripts.txt"),
-		ScriptExtensions:      path.Join(unicodeDir, "ScriptExtensions.txt"),
-		PropertyValueAliases:  path.Join(unicodeDir, "PropertyValueAliases.txt"),
-		PropList:              path.Join(unicodeDir, "PropList.txt"),
-		DerivedCoreProperties: path.Join(unicodeDir, "DerivedCoreProperties.txt"),
-		EmojiData:             path.Join(unicodeDir, "emoji-data.txt"),
+		GeneralCategory:         path.Join(unicodeDir, "DerivedGeneralCategory.txt"),
+		EastAsianWidth:          path.Join(unicodeDir, "EastAsianWidth.txt"),
+		Scripts:                 path.Join(unicodeDir, "Scripts.txt"),
+		ScriptExtensions:        path.Join(unicodeDir, "ScriptExtensions.txt"),
+		PropertyValueAliases:    path.Join(unicodeDir, "PropertyValueAliases.txt"),
+		PropList:                path.Join(unicodeDir, "PropList.txt"),
+		DerivedCoreProperties:   path.Join(unicodeDir, "DerivedCoreProperties.txt"),
+		EmojiData:               path.Join(unicodeDir, "emoji-data.txt"),
+		DerivedBinaryProperties: path.Join(unicodeDir, "DerivedBinaryProperties.txt"),
 	}
 }
 
 type UniSetMap[T comparable] = map[T]*set.UniSet
 
 type DefRecord struct {
-	ScriptDef          *ScriptDef
-	PropListDef        *PropertyDef[PropList]
-	DerivedCorePropDef *PropertyDef[DerivedCoreProperty]
-	EmojiDef           *PropertyDef[Emoji]
+	ScriptDef            *ScriptDef
+	PropListDef          *PropertyDef[PropList]
+	DerivedCorePropDef   *PropertyDef[DerivedCoreProperty]
+	EmojiDef             *PropertyDef[Emoji]
+	DerivedBinaryPropDef *PropertyDef[DerivedBinaryProperty]
 }
 
 type EvalContext struct {
-	Headers            DataHeaders
-	CateMap            UniSetMap[GeneralCategory]
-	EawMap             UniSetMap[EastAsianWidth]
-	AliasMapRecord     *AliasMapRecord
-	DefRecord          DefRecord
-	ScriptMap          UniSetMap[Script]
-	ScriptXMap         UniSetMap[Script]
-	PropListMap        UniSetMap[PropList]
-	DerivedCorePropMap UniSetMap[DerivedCoreProperty]
-	EmojiMap           UniSetMap[Emoji]
+	Headers              DataHeaders
+	CateMap              UniSetMap[GeneralCategory]
+	EawMap               UniSetMap[EastAsianWidth]
+	AliasMapRecord       *AliasMapRecord
+	DefRecord            DefRecord
+	ScriptMap            UniSetMap[Script]
+	ScriptXMap           UniSetMap[Script]
+	PropListMap          UniSetMap[PropList]
+	DerivedCorePropMap   UniSetMap[DerivedCoreProperty]
+	EmojiMap             UniSetMap[Emoji]
+	DerivedBinaryPropMap UniSetMap[DerivedBinaryProperty]
 }
 
 func NewEvalContext(data *UnicodeData) (*EvalContext, error) {
@@ -110,22 +114,28 @@ func NewEvalContext(data *UnicodeData) (*EvalContext, error) {
 	if err != nil {
 		return nil, err
 	}
+	derivedBinaryPropDef, derivedBinaryPropMap, err := LoadPropertyMap[DerivedBinaryProperty](data.DerivedBinaryProperties, &headers)
+	if err != nil {
+		return nil, err
+	}
 	return &EvalContext{
 		Headers:        headers,
 		CateMap:        catMap,
 		EawMap:         eawMap,
 		AliasMapRecord: aliasMaps,
 		DefRecord: DefRecord{
-			ScriptDef:          scriptDef,
-			PropListDef:        propDef,
-			DerivedCorePropDef: derivedCorePropDef,
-			EmojiDef:           emojiDef,
+			ScriptDef:            scriptDef,
+			PropListDef:          propDef,
+			DerivedCorePropDef:   derivedCorePropDef,
+			EmojiDef:             emojiDef,
+			DerivedBinaryPropDef: derivedBinaryPropDef,
 		},
-		ScriptMap:          scriptMap,
-		ScriptXMap:         scriptXMap,
-		PropListMap:        propListMap,
-		DerivedCorePropMap: derivedCorePropMap,
-		EmojiMap:           emojiMap,
+		ScriptMap:            scriptMap,
+		ScriptXMap:           scriptXMap,
+		PropListMap:          propListMap,
+		DerivedCorePropMap:   derivedCorePropMap,
+		EmojiMap:             emojiMap,
+		DerivedBinaryPropMap: derivedBinaryPropMap,
 	}, nil
 }
 

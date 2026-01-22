@@ -28,6 +28,6 @@ curl "https://www.unicode.org/Public/$REV/ucd/DerivedCoreProperties.txt" \
 curl "https://www.unicode.org/Public/$REV/ucd/emoji/emoji-data.txt" \
   > ./unicode_dir/emoji-data.txt || { echo failed; exit 1; }
 
-curl "https://www.unicode.org/Public/$REV/ucd/ReadMe.txt" \
-  > ./unicode_dir/ReadMe.txt || { echo failed; exit 1; }
+curl "https://www.unicode.org/Public/$REV/ucd/extracted/DerivedBinaryProperties.txt" \
+  > ./unicode_dir/DerivedBinaryProperties.txt || { echo failed; exit 1; }
 
