@@ -6,6 +6,10 @@ type Range(f: String, l: String) {
     let lastN = $last.toInt(16)!
 }
 
+function compare(o : Range) : Int for Range {
+    return $this.lastN.compare($o.firstN)
+}
+
 function try_merge(o : Range) : Range? for Range {
     if $this.lastN + 1 == $o.firstN {
         # merge range
@@ -22,7 +26,7 @@ function minimize(map: [String: [Range]]) {
 
     for key in $keys {
         var new_values: [Range]
-        var old_values = $map[$key]
+        var old_values = $map[$key].sortBy(function(x, y)=>$x.compare($y))
         for value in $old_values {
             if $new_values.empty() {
                 $new_values.add($value)

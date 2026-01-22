@@ -31,3 +31,5 @@ curl "https://www.unicode.org/Public/$REV/ucd/emoji/emoji-data.txt" \
 curl "https://www.unicode.org/Public/$REV/ucd/extracted/DerivedBinaryProperties.txt" \
   > ./unicode_dir/DerivedBinaryProperties.txt || { echo failed; exit 1; }
 
+curl "https://www.unicode.org/Public/$REV/ucd/DerivedNormalizationProps.txt" \
+  > ./unicode_dir/DerivedNormalizationProps.txt || { echo failed; exit 1; }

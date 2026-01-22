@@ -263,9 +263,24 @@ func (p *Parser) parsePrimary() Node {
 				s, k := ctx.DerivedBinaryPropMap[p]
 				return s, k
 			})
+		} else if IsDerivedNormalizationPropPrefix(prefix.text) && p.defRecord != nil {
+			p.expect(TokenColon)
+			var properties []DerivedNormalizationProp
+			p.parsePropertySeq(func(s string) {
+				v, err := p.defRecord.DerivedNormalizationPropDef.Parse(s)
+				if err != nil {
+					p.error(err.Error())
+				}
+				properties = append(properties, v)
+			})
+			return NewPropertyNode(properties, func(ctx *EvalContext, p DerivedNormalizationProp) (*set.UniSet, bool) {
+				s, k := ctx.DerivedNormalizationPropMap[p]
+				return s, k
+			})
 		} else {
 			p.error(fmt.Sprintf("unknown property prefix: %s, "+
-				"must be `cat`, `gc`, `ea`, `eaw`, `sc`, `scx`, `prop`, `dcp`, `emoji` or `dbp`", prefix.text))
+				"must be `cat`, `gc`, `ea`, `eaw`, `sc`, `scx`, "+
+				"`prop`, `dcp`, `emoji`, `dbp` or `dnp`", prefix.text))
 		}
 	case TokenRune:
 		first := p.parseRune()

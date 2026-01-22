@@ -31,53 +31,57 @@ func (d *DataHeaders) Print(writer io.Writer) error {
 }
 
 type UnicodeData struct {
-	GeneralCategory         string // DerivedGeneralCategory.txt
-	EastAsianWidth          string // EastAsianWidth.txt
-	Scripts                 string // Scripts.txt
-	ScriptExtensions        string // ScriptExtensions.txt
-	PropertyValueAliases    string // PropertyValueAliases.txt
-	PropList                string // PropList.txt
-	DerivedCoreProperties   string // DerivedCoreProperties.txt
-	EmojiData               string // emoji-data.txt
-	DerivedBinaryProperties string // DerivedBinaryProperties.txt
+	GeneralCategory           string // DerivedGeneralCategory.txt
+	EastAsianWidth            string // EastAsianWidth.txt
+	Scripts                   string // Scripts.txt
+	ScriptExtensions          string // ScriptExtensions.txt
+	PropertyValueAliases      string // PropertyValueAliases.txt
+	PropList                  string // PropList.txt
+	DerivedCoreProperties     string // DerivedCoreProperties.txt
+	EmojiData                 string // emoji-data.txt
+	DerivedBinaryProperties   string // DerivedBinaryProperties.txt
+	DerivedNormalizationProps string // DerivedNormalizationProps.txt
 }
 
 func NewUnicodeData(unicodeDir string) *UnicodeData {
 	return &UnicodeData{
-		GeneralCategory:         path.Join(unicodeDir, "DerivedGeneralCategory.txt"),
-		EastAsianWidth:          path.Join(unicodeDir, "EastAsianWidth.txt"),
-		Scripts:                 path.Join(unicodeDir, "Scripts.txt"),
-		ScriptExtensions:        path.Join(unicodeDir, "ScriptExtensions.txt"),
-		PropertyValueAliases:    path.Join(unicodeDir, "PropertyValueAliases.txt"),
-		PropList:                path.Join(unicodeDir, "PropList.txt"),
-		DerivedCoreProperties:   path.Join(unicodeDir, "DerivedCoreProperties.txt"),
-		EmojiData:               path.Join(unicodeDir, "emoji-data.txt"),
-		DerivedBinaryProperties: path.Join(unicodeDir, "DerivedBinaryProperties.txt"),
+		GeneralCategory:           path.Join(unicodeDir, "DerivedGeneralCategory.txt"),
+		EastAsianWidth:            path.Join(unicodeDir, "EastAsianWidth.txt"),
+		Scripts:                   path.Join(unicodeDir, "Scripts.txt"),
+		ScriptExtensions:          path.Join(unicodeDir, "ScriptExtensions.txt"),
+		PropertyValueAliases:      path.Join(unicodeDir, "PropertyValueAliases.txt"),
+		PropList:                  path.Join(unicodeDir, "PropList.txt"),
+		DerivedCoreProperties:     path.Join(unicodeDir, "DerivedCoreProperties.txt"),
+		EmojiData:                 path.Join(unicodeDir, "emoji-data.txt"),
+		DerivedBinaryProperties:   path.Join(unicodeDir, "DerivedBinaryProperties.txt"),
+		DerivedNormalizationProps: path.Join(unicodeDir, "DerivedNormalizationProps.txt"),
 	}
 }
 
 type UniSetMap[T comparable] = map[T]*set.UniSet
 
 type DefRecord struct {
-	ScriptDef            *ScriptDef
-	PropListDef          *PropertyDef[PropList]
-	DerivedCorePropDef   *PropertyDef[DerivedCoreProperty]
-	EmojiDef             *PropertyDef[Emoji]
-	DerivedBinaryPropDef *PropertyDef[DerivedBinaryProperty]
+	ScriptDef                   *ScriptDef
+	PropListDef                 *PropertyDef[PropList]
+	DerivedCorePropDef          *PropertyDef[DerivedCoreProperty]
+	EmojiDef                    *PropertyDef[Emoji]
+	DerivedBinaryPropDef        *PropertyDef[DerivedBinaryProperty]
+	DerivedNormalizationPropDef *PropertyDef[DerivedNormalizationProp]
 }
 
 type EvalContext struct {
-	Headers              DataHeaders
-	CateMap              UniSetMap[GeneralCategory]
-	EawMap               UniSetMap[EastAsianWidth]
-	AliasMapRecord       *AliasMapRecord
-	DefRecord            DefRecord
-	ScriptMap            UniSetMap[Script]
-	ScriptXMap           UniSetMap[Script]
-	PropListMap          UniSetMap[PropList]
-	DerivedCorePropMap   UniSetMap[DerivedCoreProperty]
-	EmojiMap             UniSetMap[Emoji]
-	DerivedBinaryPropMap UniSetMap[DerivedBinaryProperty]
+	Headers                     DataHeaders
+	CateMap                     UniSetMap[GeneralCategory]
+	EawMap                      UniSetMap[EastAsianWidth]
+	AliasMapRecord              *AliasMapRecord
+	DefRecord                   DefRecord
+	ScriptMap                   UniSetMap[Script]
+	ScriptXMap                  UniSetMap[Script]
+	PropListMap                 UniSetMap[PropList]
+	DerivedCorePropMap          UniSetMap[DerivedCoreProperty]
+	EmojiMap                    UniSetMap[Emoji]
+	DerivedBinaryPropMap        UniSetMap[DerivedBinaryProperty]
+	DerivedNormalizationPropMap UniSetMap[DerivedNormalizationProp]
 }
 
 func NewEvalContext(data *UnicodeData) (*EvalContext, error) {
@@ -106,7 +110,7 @@ func NewEvalContext(data *UnicodeData) (*EvalContext, error) {
 	if err != nil {
 		return nil, err
 	}
-	derivedCorePropDef, derivedCorePropMap, err := LoadPropertyMap[DerivedCoreProperty](data.DerivedCoreProperties, &headers)
+	derivedCorePropDef, derivedCorePropMap, err := LoadPropertyMapWithJoin[DerivedCoreProperty](data.DerivedCoreProperties, &headers, true)
 	if err != nil {
 		return nil, err
 	}
@@ -118,24 +122,30 @@ func NewEvalContext(data *UnicodeData) (*EvalContext, error) {
 	if err != nil {
 		return nil, err
 	}
+	derivedNormPropDef, derivedNormPropMap, err := LoadPropertyMap[DerivedNormalizationProp](data.DerivedNormalizationProps, &headers)
+	if err != nil {
+		return nil, err
+	}
 	return &EvalContext{
 		Headers:        headers,
 		CateMap:        catMap,
 		EawMap:         eawMap,
 		AliasMapRecord: aliasMaps,
 		DefRecord: DefRecord{
-			ScriptDef:            scriptDef,
-			PropListDef:          propDef,
-			DerivedCorePropDef:   derivedCorePropDef,
-			EmojiDef:             emojiDef,
-			DerivedBinaryPropDef: derivedBinaryPropDef,
+			ScriptDef:                   scriptDef,
+			PropListDef:                 propDef,
+			DerivedCorePropDef:          derivedCorePropDef,
+			EmojiDef:                    emojiDef,
+			DerivedBinaryPropDef:        derivedBinaryPropDef,
+			DerivedNormalizationPropDef: derivedNormPropDef,
 		},
-		ScriptMap:            scriptMap,
-		ScriptXMap:           scriptXMap,
-		PropListMap:          propListMap,
-		DerivedCorePropMap:   derivedCorePropMap,
-		EmojiMap:             emojiMap,
-		DerivedBinaryPropMap: derivedBinaryPropMap,
+		ScriptMap:                   scriptMap,
+		ScriptXMap:                  scriptXMap,
+		PropListMap:                 propListMap,
+		DerivedCorePropMap:          derivedCorePropMap,
+		EmojiMap:                    emojiMap,
+		DerivedBinaryPropMap:        derivedBinaryPropMap,
+		DerivedNormalizationPropMap: derivedNormPropMap,
 	}, nil
 }
 
@@ -269,7 +279,7 @@ func (d *DataLoader) formatErr(e error) error {
 	return fmt.Errorf("%s:%d: [load error] %s", d.name, d.lineno, e.Error())
 }
 
-func parseEntry(line string) (runeRange set.RuneRange, property string, err error) {
+func parseEntry(line string, join bool) (runeRange set.RuneRange, property string, err error) {
 	// line: 1D167..1D169  ; InCB; Extend # Mn
 	// line: 1EE5B         ; Grapheme_Base # Lo
 
@@ -290,11 +300,15 @@ func parseEntry(line string) (runeRange set.RuneRange, property string, err erro
 	}
 
 	// extract property
-	var pp []string
-	for _, s := range ss[1:] {
-		pp = append(pp, strings.TrimSpace(s))
+	if join {
+		var pp []string
+		for _, s := range ss[1:] {
+			pp = append(pp, strings.TrimSpace(s))
+		}
+		property = strings.Join(pp, "_")
+	} else {
+		property = strings.TrimSpace(ss[1])
 	}
-	property = strings.Join(pp, "_")
 	return
 }
 
@@ -327,9 +341,9 @@ func (d *DataLoader) Load(callback func(string) error) error {
 	return nil
 }
 
-func (d *DataLoader) LoadProperties(callback func(set.RuneRange, string) error) error {
+func (d *DataLoader) LoadProperties(join bool, callback func(set.RuneRange, string) error) error {
 	return d.Load(func(line string) error {
-		runeRange, property, err := parseEntry(line)
+		runeRange, property, err := parseEntry(line, join)
 		if err != nil {
 			return err
 		}
@@ -348,7 +362,7 @@ func LoadGeneralCategoryMap(filename string, dbInfoList *DataHeaders) (setMap Un
 	if err != nil {
 		return nil, err
 	}
-	err = loader.LoadProperties(func(runeRange set.RuneRange, property string) error {
+	err = loader.LoadProperties(false, func(runeRange set.RuneRange, property string) error {
 		cate, err := ParseGeneralCategory(property, nil)
 		if err != nil {
 			return err
@@ -384,7 +398,7 @@ func LoadEastAsianWidthMap(filename string, dbInfoList *DataHeaders) (setMap Uni
 	if err != nil {
 		return nil, err
 	}
-	err = loader.LoadProperties(func(runeRange set.RuneRange, property string) error {
+	err = loader.LoadProperties(false, func(runeRange set.RuneRange, property string) error {
 		eaw, err := ParseEastAsianWidth(property, nil)
 		if err != nil {
 			return err
@@ -433,7 +447,7 @@ func LoadScriptMap(filename string, aliasMap *AliasMap, dbInfoList *DataHeaders)
 	if err != nil {
 		return nil, nil, err
 	}
-	err = loader.LoadProperties(func(runeRange set.RuneRange, property string) error {
+	err = loader.LoadProperties(false, func(runeRange set.RuneRange, property string) error {
 		if _, ok := nameToScript[property]; !ok { // init
 			script := Script(len(nameToScript))
 			nameToScript[property] = script
@@ -472,7 +486,7 @@ func LoadScriptXMap(filename string, def *ScriptDef, aliasMap *AliasMap, dbInfoL
 	if err != nil {
 		return nil, err
 	}
-	err = loader.LoadProperties(func(runeRange set.RuneRange, property string) error {
+	err = loader.LoadProperties(false, func(runeRange set.RuneRange, property string) error {
 		ss := strings.Split(property, " ")
 		for _, s := range ss {
 			script, err := def.Parse(s, aliasMap)
@@ -500,7 +514,7 @@ func LoadScriptXMap(filename string, def *ScriptDef, aliasMap *AliasMap, dbInfoL
 	return setMap, nil
 }
 
-func LoadPropertyMap[T ~int](filename string, dbInfoList *DataHeaders) (def *PropertyDef[T], setMap UniSetMap[T], e error) {
+func LoadPropertyMapWithJoin[T ~int](filename string, dbInfoList *DataHeaders, join bool) (def *PropertyDef[T], setMap UniSetMap[T], e error) {
 	builderMap := map[T]*set.UniSetBuilder{}
 	nameToProp := map[string]T{}
 
@@ -509,7 +523,7 @@ func LoadPropertyMap[T ~int](filename string, dbInfoList *DataHeaders) (def *Pro
 	if err != nil {
 		return nil, nil, err
 	}
-	err = loader.LoadProperties(func(runeRange set.RuneRange, property string) error {
+	err = loader.LoadProperties(join, func(runeRange set.RuneRange, property string) error {
 		if _, ok := nameToProp[property]; !ok { // init
 			script := T(len(nameToProp))
 			nameToProp[property] = script
@@ -538,4 +552,8 @@ func LoadPropertyMap[T ~int](filename string, dbInfoList *DataHeaders) (def *Pro
 	}
 	dbInfoList.List = append(dbInfoList.List, loader.header)
 	return propDef, setMap, nil
+}
+
+func LoadPropertyMap[T ~int](filename string, dbInfoList *DataHeaders) (def *PropertyDef[T], setMap UniSetMap[T], e error) {
+	return LoadPropertyMapWithJoin[T](filename, dbInfoList, false)
 }

@@ -2,22 +2,22 @@
 
 source $SCRIPT_DIR/set_helper.arsh
 
-# generate golden files for proplist
+# generate golden files for derived normalization properties
 
 var REV="16.0.0"
 
 let output_dir = $1.realpath()
 
-test -f ./PropList.txt ||
-  curl "https://www.unicode.org/Public/$REV/ucd/PropList.txt" \
-    > ./PropList.txt
+test -f ./DerivedNormalizationProps.txt ||
+  curl "https://www.unicode.org/Public/$REV/ucd/DerivedNormalizationProps.txt" \
+    > ./DerivedNormalizationProps.txt
 
 var prop_map : [String: [Range]]
 var count =0 
-for line in new FD('./PropList.txt') {
+for line in new FD('./DerivedNormalizationProps.txt') {
   $count++
   ($line.empty() || $line.startsWith('#')) && continue
-  var matched = $/^(?<first>[0-9A-F]+)(\.\.(?<last>[0-9A-F]+))?[ ]*;[ ]+(?<prop>([a-zA-Z][_a-zA-Z0-9]*)) +#.+$/.match($line) ?? {echo failed at $count: $line; exit 1;}
+  var matched = $/^(?<first>[0-9A-F]+)(\.\.(?<last>[0-9A-F]+))?[ ]*;[ ]+(?<prop>([a-zA-Z][_a-zA-Z0-9]*)) *[#;].+$/.match($line) ?? {echo failed at $count: $line; exit 1;}
   var first = $matched.named('first')!
   var last =  $matched.named('last') ?? $first
   var sc = $matched.named('prop')!
@@ -37,6 +37,6 @@ $minimize($prop_map)
 for prop, values in $prop_map {
   for v in $values {
     echo "{ 0x${v.first}, 0x${v.last} },"
-  } with > $output_dir/prop_${$prop.lower()}.golden
-  echo "prop:$prop" > $output_dir/prop_${$prop.lower()}.test
+  } with > $output_dir/dnp_${$prop.lower()}.golden
+  echo "dnp:$prop" > $output_dir/dnp_${$prop.lower()}.test
 }

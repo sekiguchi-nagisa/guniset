@@ -118,3 +118,7 @@ func TestPrintEmoji(t *testing.T) {
 func TestPrintDerivedBinaryProperties(t *testing.T) {
 	runGoldenTest(t, "unicode16_dbp", SetPrintAll)
 }
+
+func TestPrintDerivedNormalizationProperties(t *testing.T) {
+	runGoldenTest(t, "unicode16_dnp", SetPrintAll)
+}

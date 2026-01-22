@@ -179,6 +179,12 @@ func (g *GUniSet) EnumerateProperty() error {
 		}
 		return nil
 	}
+	if op.IsDerivedNormalizationPropPrefix(g.SetOperation) {
+		for prop := range ctx.DefRecord.DerivedNormalizationPropDef.EachProperty {
+			_, _ = fmt.Fprintln(g.Writer, ctx.DefRecord.DerivedNormalizationPropDef.Format(prop))
+		}
+		return nil
+	}
 	return fmt.Errorf("unknown property: %s", g.SetOperation)
 }
 
@@ -219,7 +225,7 @@ func fetchUnicodeData(rev string, output string) error {
 	targets := []string{
 		"extracted/DerivedGeneralCategory.txt", "EastAsianWidth.txt", "PropertyValueAliases.txt",
 		"Scripts.txt", "ScriptExtensions.txt", "PropList.txt", "DerivedCoreProperties.txt",
-		"emoji/emoji-data.txt", "extracted/DerivedBinaryProperties.txt",
+		"emoji/emoji-data.txt", "extracted/DerivedBinaryProperties.txt", "DerivedNormalizationProps.txt",
 	}
 	if rev == "latest" {
 		rev = "UCD/latest"

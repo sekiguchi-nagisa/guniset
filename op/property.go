@@ -337,3 +337,11 @@ const DerivedBinaryPropPrefix = "dbp"
 func IsDerivedBinaryPropertyPrefix(s string) bool {
 	return s == DerivedBinaryPropPrefix
 }
+
+type DerivedNormalizationProp int
+
+const DerivedNormalizationPropPrefix = "dnp"
+
+func IsDerivedNormalizationPropPrefix(s string) bool {
+	return s == DerivedNormalizationPropPrefix
+}
