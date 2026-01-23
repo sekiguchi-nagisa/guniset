@@ -25,6 +25,8 @@ having the following data
 * ``PropList.txt``
 * ``DerivedCoreProperties.txt``
 * ``emoji-data.txt``
+* ``DerivedBinaryProperties.txt``
+* ``DerivedNormalizationProps.txt``
 
 ## Set Operation
 
@@ -45,6 +47,8 @@ having the following data
 * ``prop:White_Space``: Unicode property defined in ``PropList.txt``
 * ``dcp:Grapheme_Base``: Unicode property defined in ``DerivedCoreProperties.txt``
 * ``emoji:Emoji_Presentation``: Unicode property defined in ``emoji-data.txt``
+* ``dbp:Bidi_Mirrored``: Unicode property defined in ``DerivedBinaryProperties.txt``
+* ``dnp:FC_NFKC``: Unicode property defined in ``DerivedNormalizationProps.txt``
 * ``U+1234``, ``0..1FFF``: Unicode code point
 
 ### Grammar
@@ -66,11 +70,13 @@ ComplementExpression
 PrimaryExpression
     : ('cat' | 'gc') ':' CateList 
     | ('eaw' | 'ea') ':' EawList
-    | 'sc' ':' ScriptList
-    | 'scx' ':' ScriptList        # for script extensions
-    | 'prop' ':' PropList         # for unicode properties
+    | 'sc' ':' PropList
+    | 'scx' ':' PropList           # for script extensions
+    | 'prop' ':' PropList          # for unicode properties
     | 'dcp' ':' PropList           # for derived core properties
     | 'emoji' ':' PropList         # for emoji
+    | 'dbp' ':' PropList           # for derived binary properties
+    | 'dnp' ':' PropList           # for derived normalization properties
     | CodePoint '..' CodePoint
     | CodePoint
     | '(' Epxression ')'
@@ -80,13 +86,14 @@ CateList
     | Cate ',' CateList
 
 Cate
-    : 'Lu' | 'Ll' | 'Lt' | 'Lm' | 'Lo'
-    | 'Mn' | 'Mc' | 'Me'
-    | 'Nd' | 'Nl' | 'No'
-    | 'Pc' | 'Pd' | 'Ps' | 'Pe' | 'Pi' | 'Pf' | 'Po'
-    | 'Sm' | 'Sc' | 'Sk' | 'So' | 'Zs' | 'Zl' | 'Zp'
-    | 'Cc' | 'Cf' | 'Cs' | 'Co' | 'Cn'
-    | <other general category values and aliases>
+    : 'Lu' | 'Ll' | 'Lt' | 'Lm' | 'Lo' | 'LC' | 'L'
+    | 'Mn' | 'Mc' | 'Me' | 'M'
+    | 'Nd' | 'Nl' | 'No' | 'N'
+    | 'Pc' | 'Pd' | 'Ps' | 'Pe' | 'Pi' | 'Pf' | 'Po' | 'P'
+    | 'Sm' | 'Sc' | 'Sk' | 'So' | 'S'
+    | 'Zs' | 'Zl' | 'Zp' | 'Z'
+    | 'Cc' | 'Cf' | 'Cs' | 'Co' | 'Cn' | 'C'
+    | [a-zA-Z][a-zA-Z0-9_]+  # <other general category values and aliases>
 
 EawList
     : Eaw
@@ -94,21 +101,14 @@ EawList
 
 Eaw
     : 'F' | 'W' | 'A' | 'Na' | 'N' | 'H'
-    | <other east asian width aliases>
-
-ScriptList
-    : Sctipt
-    | Script ',' ScriptList
-
-Script
-    : <script values and aliases>
+    | [a-zA-Z][a-zA-Z0-9_]+  # <other east asian width aliases>
 
 PropList
     : Prop
     | Prop ',' PropList
 
 Prop
-    : <property values>
+    : [a-zA-Z][a-zA-Z0-9_]+  # <other property names>
 
 CodePoint
     : 'U+' [0-9a-fA-F]+
