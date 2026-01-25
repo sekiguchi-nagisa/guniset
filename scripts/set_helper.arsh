@@ -78,7 +78,7 @@ function generate_golden(filename: String, prefix: String, output_dir: String) {
 function generate_enum_golden(filename: String, prefix: String, output_dir: String) {
     var propertySet : [String:Bool]
     var count =0 
-    for line in new FD('./DerivedNormalizationProps.txt') {
+    for line in new FD($filename) {
         $count++
         ($line.empty() || $line.startsWith('#')) && continue
         var matched = $/^(?<first>[0-9A-F]+)(\.\.(?<last>[0-9A-F]+))?[ ]*;[ ]+(?<prop>([a-zA-Z][_a-zA-Z0-9]*)) *[;#].+$/.match($line) ?? {echo failed at $count: $line; exit 1;}
