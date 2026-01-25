@@ -345,3 +345,27 @@ const DerivedNormalizationPropPrefix = "dnp"
 func IsDerivedNormalizationPropPrefix(s string) bool {
 	return s == DerivedNormalizationPropPrefix
 }
+
+type GraphemeBreakProperty int
+
+const GraphemeBreakPropPrefix = "gbp"
+
+func IsGraphemeBreakPropertyPrefix(s string) bool {
+	return s == GraphemeBreakPropPrefix
+}
+
+type WordBreakProperty int
+
+const WordBreakPropPrefix = "wbp"
+
+func IsWordBreakPropertyPrefix(s string) bool {
+	return s == WordBreakPropPrefix
+}
+
+type SentenceBreakProperty int
+
+const SentenceBreakPropPrefix = "sbp"
+
+func IsSentenceBreakPropertyPrefix(s string) bool {
+	return s == SentenceBreakPropPrefix
+}

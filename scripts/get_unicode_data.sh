@@ -33,3 +33,12 @@ curl "https://www.unicode.org/Public/$REV/ucd/extracted/DerivedBinaryProperties.
 
 curl "https://www.unicode.org/Public/$REV/ucd/DerivedNormalizationProps.txt" \
   > ./unicode_dir/DerivedNormalizationProps.txt || { echo failed; exit 1; }
+
+curl "https://www.unicode.org/Public/$REV/ucd/auxiliary/GraphemeBreakProperty.txt" \
+  > ./unicode_dir/GraphemeBreakProperty.txt || { echo failed; exit 1; }
+
+curl "https://www.unicode.org/Public/$REV/ucd/auxiliary/WordBreakProperty.txt" \
+  > ./unicode_dir/WordBreakProperty.txt || { echo failed; exit 1; }
+
+curl "https://www.unicode.org/Public/$REV/ucd/auxiliary/SentenceBreakProperty.txt" \
+  > ./unicode_dir/SentenceBreakProperty.txt || { echo failed; exit 1; }

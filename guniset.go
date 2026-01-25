@@ -185,6 +185,24 @@ func (g *GUniSet) EnumerateProperty() error {
 		}
 		return nil
 	}
+	if op.IsGraphemeBreakPropertyPrefix(g.SetOperation) {
+		for prop := range ctx.DefRecord.GraphemeBreakPropDef.EachProperty {
+			_, _ = fmt.Fprintln(g.Writer, ctx.DefRecord.GraphemeBreakPropDef.Format(prop))
+		}
+		return nil
+	}
+	if op.IsWordBreakPropertyPrefix(g.SetOperation) {
+		for prop := range ctx.DefRecord.WordBreakPropDef.EachProperty {
+			_, _ = fmt.Fprintln(g.Writer, ctx.DefRecord.WordBreakPropDef.Format(prop))
+		}
+		return nil
+	}
+	if op.IsSentenceBreakPropertyPrefix(g.SetOperation) {
+		for prop := range ctx.DefRecord.SentenceBreakPropDef.EachProperty {
+			_, _ = fmt.Fprintln(g.Writer, ctx.DefRecord.SentenceBreakPropDef.Format(prop))
+		}
+		return nil
+	}
 	return fmt.Errorf("unknown property: %s", g.SetOperation)
 }
 
@@ -226,6 +244,7 @@ func fetchUnicodeData(rev string, output string) error {
 		"extracted/DerivedGeneralCategory.txt", "EastAsianWidth.txt", "PropertyValueAliases.txt",
 		"Scripts.txt", "ScriptExtensions.txt", "PropList.txt", "DerivedCoreProperties.txt",
 		"emoji/emoji-data.txt", "extracted/DerivedBinaryProperties.txt", "DerivedNormalizationProps.txt",
+		"auxiliary/GraphemeBreakProperty.txt", "auxiliary/WordBreakProperty.txt", "auxiliary/SentenceBreakProperty.txt",
 	}
 	if rev == "latest" {
 		rev = "UCD/latest"

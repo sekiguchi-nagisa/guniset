@@ -41,6 +41,9 @@ type UnicodeData struct {
 	EmojiData                 string // emoji-data.txt
 	DerivedBinaryProperties   string // DerivedBinaryProperties.txt
 	DerivedNormalizationProps string // DerivedNormalizationProps.txt
+	GraphemeBreakProperty     string // GraphemeBreakProperty.txt
+	WordBreakProperty         string // WordBreakProperty.txt
+	SentenceBreakProperty     string // SentenceBreakProperty.txt
 }
 
 func NewUnicodeData(unicodeDir string) *UnicodeData {
@@ -55,6 +58,9 @@ func NewUnicodeData(unicodeDir string) *UnicodeData {
 		EmojiData:                 path.Join(unicodeDir, "emoji-data.txt"),
 		DerivedBinaryProperties:   path.Join(unicodeDir, "DerivedBinaryProperties.txt"),
 		DerivedNormalizationProps: path.Join(unicodeDir, "DerivedNormalizationProps.txt"),
+		GraphemeBreakProperty:     path.Join(unicodeDir, "GraphemeBreakProperty.txt"),
+		WordBreakProperty:         path.Join(unicodeDir, "WordBreakProperty.txt"),
+		SentenceBreakProperty:     path.Join(unicodeDir, "SentenceBreakProperty.txt"),
 	}
 }
 
@@ -67,6 +73,9 @@ type DefRecord struct {
 	EmojiDef                    *PropertyDef[Emoji]
 	DerivedBinaryPropDef        *PropertyDef[DerivedBinaryProperty]
 	DerivedNormalizationPropDef *PropertyDef[DerivedNormalizationProp]
+	GraphemeBreakPropDef        *PropertyDef[GraphemeBreakProperty]
+	WordBreakPropDef            *PropertyDef[WordBreakProperty]
+	SentenceBreakPropDef        *PropertyDef[SentenceBreakProperty]
 }
 
 type EvalContext struct {
@@ -82,6 +91,9 @@ type EvalContext struct {
 	EmojiMap                    UniSetMap[Emoji]
 	DerivedBinaryPropMap        UniSetMap[DerivedBinaryProperty]
 	DerivedNormalizationPropMap UniSetMap[DerivedNormalizationProp]
+	GraphemeBreakPropMap        UniSetMap[GraphemeBreakProperty]
+	WordBreakPropMap            UniSetMap[WordBreakProperty]
+	SentenceBreakPropMap        UniSetMap[SentenceBreakProperty]
 }
 
 func NewEvalContext(data *UnicodeData) (*EvalContext, error) {
@@ -126,6 +138,18 @@ func NewEvalContext(data *UnicodeData) (*EvalContext, error) {
 	if err != nil {
 		return nil, err
 	}
+	graphemePropDef, graphemePropMap, err := LoadPropertyMap[GraphemeBreakProperty](data.GraphemeBreakProperty, &headers)
+	if err != nil {
+		return nil, err
+	}
+	wordPropDef, wordPropMap, err := LoadPropertyMap[WordBreakProperty](data.WordBreakProperty, &headers)
+	if err != nil {
+		return nil, err
+	}
+	sentencePropDef, sentencePropMap, err := LoadPropertyMap[SentenceBreakProperty](data.SentenceBreakProperty, &headers)
+	if err != nil {
+		return nil, err
+	}
 	return &EvalContext{
 		Headers:        headers,
 		CateMap:        catMap,
@@ -138,6 +162,9 @@ func NewEvalContext(data *UnicodeData) (*EvalContext, error) {
 			EmojiDef:                    emojiDef,
 			DerivedBinaryPropDef:        derivedBinaryPropDef,
 			DerivedNormalizationPropDef: derivedNormPropDef,
+			GraphemeBreakPropDef:        graphemePropDef,
+			WordBreakPropDef:            wordPropDef,
+			SentenceBreakPropDef:        sentencePropDef,
 		},
 		ScriptMap:                   scriptMap,
 		ScriptXMap:                  scriptXMap,
@@ -146,6 +173,9 @@ func NewEvalContext(data *UnicodeData) (*EvalContext, error) {
 		EmojiMap:                    emojiMap,
 		DerivedBinaryPropMap:        derivedBinaryPropMap,
 		DerivedNormalizationPropMap: derivedNormPropMap,
+		GraphemeBreakPropMap:        graphemePropMap,
+		WordBreakPropMap:            wordPropMap,
+		SentenceBreakPropMap:        sentencePropMap,
 	}, nil
 }
 
@@ -198,10 +228,27 @@ func formatScriptX(def *ScriptDef, scx []Script) string {
 	return builder.String()
 }
 
+func formatEmoji(def *PropertyDef[Emoji], emoji []Emoji) string {
+	builder := strings.Builder{}
+	builder.WriteString("[")
+	for i, s := range emoji {
+		if i > 0 {
+			builder.WriteString(", ")
+		}
+		builder.WriteString(def.Format(s))
+	}
+	builder.WriteString("]")
+	return builder.String()
+}
+
 func (e *EvalContext) Query(r rune, writer io.Writer) error {
 	cat := CAT_Cn
 	eaw := EAW_N
 	sc := e.DefRecord.ScriptDef.Unknown()
+	var emoji []Emoji
+	gbp := ""
+	wbp := ""
+	sbp := ""
 	var scx []Script
 	for cc, uniSet := range e.CateMap {
 		if uniSet.Find(r) {
@@ -221,17 +268,48 @@ func (e *EvalContext) Query(r rune, writer io.Writer) error {
 			break
 		}
 	}
-	for s, uniSet := range e.ScriptXMap {
+	for s := range e.DefRecord.ScriptDef.EachScript {
+		if m, ok := e.ScriptXMap[s]; ok && m.Find(r) {
+			scx = append(scx, s) // may have multiple property
+		}
+	}
+	for s := range e.DefRecord.EmojiDef.EachProperty {
+		if m, ok := e.EmojiMap[s]; ok && m.Find(r) {
+			emoji = append(emoji, s) // may have multiple property
+		}
+	}
+	for s, uniSet := range e.GraphemeBreakPropMap {
 		if uniSet.Find(r) {
-			scx = append(scx, s)
+			gbp = e.DefRecord.GraphemeBreakPropDef.Format(s)
+			break
+		}
+	}
+	for s, uniSet := range e.WordBreakPropMap {
+		if uniSet.Find(r) {
+			wbp = e.DefRecord.WordBreakPropDef.Format(s)
+			break
+		}
+	}
+	for s, uniSet := range e.SentenceBreakPropMap {
+		if uniSet.Find(r) {
+			sbp = e.DefRecord.SentenceBreakPropDef.Format(s)
 		}
 	}
 	_, err := fmt.Fprintf(writer, "CodePoint: U+%04X\n"+
-		"GeneralCategory: %s\nEastAsianWidth: %s\nScript: %s\nScriptExtension: %s\n", r,
+		"GeneralCategory: %s\n"+
+		"EastAsianWidth: %s\n"+
+		"Script: %s\n"+
+		"ScriptExtension: %s\n"+
+		"Emoji: %s\n"+
+		"GraphemeBreak: %s\n"+
+		"WordBreak: %s\n"+
+		"SentenceBreak: %s\n", r,
 		cat.Format(e.AliasMapRecord.Category()),
 		eaw.Format(e.AliasMapRecord.Eaw()),
 		e.DefRecord.ScriptDef.Format(sc, e.AliasMapRecord.Script()),
-		formatScriptX(e.DefRecord.ScriptDef, scx))
+		formatScriptX(e.DefRecord.ScriptDef, scx),
+		formatEmoji(e.DefRecord.EmojiDef, emoji),
+		gbp, wbp, sbp)
 	return err
 }
 

@@ -27,6 +27,9 @@ having the following data
 * ``emoji-data.txt``
 * ``DerivedBinaryProperties.txt``
 * ``DerivedNormalizationProps.txt``
+* ``GraphemeBreakProperty.txt``
+* ``WordBreakProperty.txt``
+* ``SentenceBreakProperty.txt``
 
 ## Set Operation
 
@@ -49,6 +52,9 @@ having the following data
 * ``emoji:Emoji_Presentation``: Unicode property defined in ``emoji-data.txt``
 * ``dbp:Bidi_Mirrored``: Unicode property defined in ``DerivedBinaryProperties.txt``
 * ``dnp:FC_NFKC``: Unicode property defined in ``DerivedNormalizationProps.txt``
+* ``gbp:Prepend``: Unicode property defined in ``GraphemeBreakProperty.txt``
+* ``wbp:Extend``: Unicode property defined in ``WordBreakProperty.txt``
+* ``sbp:Format``: Unicode property defined in ``SentenceBreakProperty.txt``
 * ``U+1234``, ``0..1FFF``: Unicode code point
 
 ### Grammar
@@ -77,6 +83,9 @@ PrimaryExpression
     | 'emoji' ':' PropList         # for emoji
     | 'dbp' ':' PropList           # for derived binary properties
     | 'dnp' ':' PropList           # for derived normalization properties
+    | 'gbp' ':' PropList           # for grapheme break properties
+    | 'wbp' ':' PropList           # for word break properties
+    | 'sbp' ':' PropList           # for sentence break properties
     | CodePoint '..' CodePoint
     | CodePoint
     | '(' Epxression ')'

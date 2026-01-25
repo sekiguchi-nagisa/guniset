@@ -277,10 +277,53 @@ func (p *Parser) parsePrimary() Node {
 				s, k := ctx.DerivedNormalizationPropMap[p]
 				return s, k
 			})
+		} else if IsGraphemeBreakPropertyPrefix(prefix.text) && p.defRecord != nil {
+			p.expect(TokenColon)
+			var properties []GraphemeBreakProperty
+			p.parsePropertySeq(func(s string) {
+				v, err := p.defRecord.GraphemeBreakPropDef.Parse(s)
+				if err != nil {
+					p.error(err.Error())
+				}
+				properties = append(properties, v)
+			})
+			return NewPropertyNode(properties, func(ctx *EvalContext, p GraphemeBreakProperty) (*set.UniSet, bool) {
+				s, k := ctx.GraphemeBreakPropMap[p]
+				return s, k
+			})
+		} else if IsWordBreakPropertyPrefix(prefix.text) && p.defRecord != nil {
+			p.expect(TokenColon)
+			var properties []WordBreakProperty
+			p.parsePropertySeq(func(s string) {
+				v, err := p.defRecord.WordBreakPropDef.Parse(s)
+				if err != nil {
+					p.error(err.Error())
+				}
+				properties = append(properties, v)
+			})
+			return NewPropertyNode(properties, func(ctx *EvalContext, p WordBreakProperty) (*set.UniSet, bool) {
+				s, k := ctx.WordBreakPropMap[p]
+				return s, k
+			})
+		} else if IsSentenceBreakPropertyPrefix(prefix.text) && p.defRecord != nil {
+			p.expect(TokenColon)
+			var properties []SentenceBreakProperty
+			p.parsePropertySeq(func(s string) {
+				v, err := p.defRecord.SentenceBreakPropDef.Parse(s)
+				if err != nil {
+					p.error(err.Error())
+				}
+				properties = append(properties, v)
+			})
+			return NewPropertyNode(properties, func(ctx *EvalContext, p SentenceBreakProperty) (*set.UniSet, bool) {
+				s, k := ctx.SentenceBreakPropMap[p]
+				return s, k
+			})
 		} else {
 			p.error(fmt.Sprintf("unknown property prefix: %s, "+
 				"must be `cat`, `gc`, `ea`, `eaw`, `sc`, `scx`, "+
-				"`prop`, `dcp`, `emoji`, `dbp` or `dnp`", prefix.text))
+				"`prop`, `dcp`, `emoji`, `dbp`, `dnp`"+
+				"`gbp`, `wbp` or `sbp`", prefix.text))
 		}
 	case TokenRune:
 		first := p.parseRune()
