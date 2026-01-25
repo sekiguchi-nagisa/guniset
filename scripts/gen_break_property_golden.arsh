@@ -1,0 +1,26 @@
+#!/usr/bin/env arsh
+
+source $SCRIPT_DIR/set_helper.arsh
+
+# generate golden files for derived normalization properties
+
+var REV="16.0.0"
+
+let output_dir = $1.realpath()
+
+test -f ./GraphemeBreakProperty.txt ||
+  curl "https://www.unicode.org/Public/$REV/ucd/auxiliary/GraphemeBreakProperty.txt" \
+    > ./GraphemeBreakProperty.txt
+
+test -f ./WordBreakProperty.txt ||
+  curl "https://www.unicode.org/Public/$REV/ucd/auxiliary/WordBreakProperty.txt" \
+    > ./WordBreakProperty.txt
+
+test -f ./SentenceBreakProperty.txt ||
+  curl "https://www.unicode.org/Public/$REV/ucd/auxiliary/SentenceBreakProperty.txt" \
+    > ./SentenceBreakProperty.txt
+
+
+$generate_enum_golden('./GraphemeBreakProperty.txt', 'gbp', $output_dir)
+$generate_enum_golden('./WordBreakProperty.txt', 'wbp', $output_dir)
+$generate_enum_golden('./SentenceBreakProperty.txt', 'sbp', $output_dir)

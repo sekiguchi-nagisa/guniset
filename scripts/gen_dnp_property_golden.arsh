@@ -1,5 +1,7 @@
 #!/usr/bin/env arsh
 
+source $SCRIPT_DIR/set_helper.arsh
+
 var REV="16.0.0"
 
 let output_dir = $1.realpath()
@@ -9,19 +11,4 @@ test -f ./DerivedNormalizationProps.txt ||
     > ./DerivedNormalizationProps.txt
 
 ## extract property
-var propertySet : [String:Bool]
-var count =0 
-for line in new FD('./DerivedNormalizationProps.txt') {
-  $count++
-  ($line.empty() || $line.startsWith('#')) && continue
-  var matched = $/^(?<first>[0-9A-F]+)(\.\.(?<last>[0-9A-F]+))?[ ]*;[ ]+(?<prop>([a-zA-Z][_a-zA-Z0-9]*)) *[;#].+$/.match($line) ?? {echo failed at $count: $line; exit 1;}
-  var sc = $matched.named('prop')!
-  $propertySet.putIfAbsent($sc, $true)
-}
-var properties : [String] 
-for k, _ in $propertySet {
-  $properties.add($k)
-}
-$properties.sort()
-
-printf "%s\n" $properties > $output_dir/dnp.golden
+$generate_enum_golden('./DerivedNormalizationProps.txt', 'dnp', $output_dir)

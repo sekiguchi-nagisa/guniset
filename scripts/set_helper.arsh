@@ -42,3 +42,54 @@ function minimize(map: [String: [Range]]) {
         $map[$key] = $new_values
     }
 }
+
+function generate_golden(filename: String, prefix: String, output_dir: String) {
+    var prop_map : [String: [Range]]
+    var count =0 
+    for line in new FD($filename) {
+        $count++
+        ($line.empty() || $line.startsWith('#')) && continue
+        var matched = $/^(?<first>[0-9A-F]+)(\.\.(?<last>[0-9A-F]+))?[ ]*;[ ]+(?<prop>([a-zA-Z][_a-zA-Z0-9]*)) *[#;].+$/.match($line) ?? 
+            { echo failed at $count: $line; exit 1; }
+        var first = $matched.named('first')!
+        var last =  $matched.named('last') ?? $first
+        var sc = $matched.named('prop')!
+        $prop_map.putIfAbsent($sc, new [Range]())
+        $prop_map[$sc].add(new Range($first, $last))
+    }
+
+    # check cate
+    for _, values in $prop_map {
+        assert ! $values.empty()
+    }
+
+    # merge
+    $minimize($prop_map)
+
+    # output
+    for prop, values in $prop_map {
+        for v in $values {
+            echo "{ 0x${v.first}, 0x${v.last} },"
+        } with > $output_dir/${prefix}_${$prop.lower()}.golden
+        echo "$prefix:$prop" > $output_dir/${prefix}_${$prop.lower()}.test
+    }
+}
+
+function generate_enum_golden(filename: String, prefix: String, output_dir: String) {
+    var propertySet : [String:Bool]
+    var count =0 
+    for line in new FD('./DerivedNormalizationProps.txt') {
+        $count++
+        ($line.empty() || $line.startsWith('#')) && continue
+        var matched = $/^(?<first>[0-9A-F]+)(\.\.(?<last>[0-9A-F]+))?[ ]*;[ ]+(?<prop>([a-zA-Z][_a-zA-Z0-9]*)) *[;#].+$/.match($line) ?? {echo failed at $count: $line; exit 1;}
+        var sc = $matched.named('prop')!
+        $propertySet.putIfAbsent($sc, $true)
+    }
+    var properties : [String] 
+    for k, _ in $propertySet {
+        $properties.add($k)
+    }
+    $properties.sort()
+
+    printf "%s\n" $properties > $output_dir/$prefix.golden
+}

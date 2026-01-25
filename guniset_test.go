@@ -122,3 +122,7 @@ func TestPrintDerivedBinaryProperties(t *testing.T) {
 func TestPrintDerivedNormalizationProperties(t *testing.T) {
 	runGoldenTest(t, "unicode16_dnp", SetPrintAll)
 }
+
+func TestPrintBreakProperty(t *testing.T) {
+	runGoldenTest(t, "unicode16_break", SetPrintAll)
+}
