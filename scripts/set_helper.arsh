@@ -92,4 +92,5 @@ function generate_enum_golden(filename: String, prefix: String, output_dir: Stri
     $properties.sort()
 
     printf "%s\n" $properties > $output_dir/$prefix.golden
+    printf "%s\n" $prefix > $output_dir/$prefix.test
 }
