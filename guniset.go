@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"regexp"
+	"strings"
 
 	"github.com/sekiguchi-nagisa/guniset/op"
 	"github.com/sekiguchi-nagisa/guniset/set"
@@ -108,6 +109,32 @@ func (g *GUniSet) RunAndSampling(seed uint64, filterOp SetFilterOp, limit *int, 
 	return nil
 }
 
+func formatScriptX(def *op.ScriptDef, scx []op.Script) string {
+	builder := strings.Builder{}
+	builder.WriteString("[")
+	for i, s := range scx {
+		if i > 0 {
+			builder.WriteString(", ")
+		}
+		builder.WriteString(def.GetAbbr(s))
+	}
+	builder.WriteString("]")
+	return builder.String()
+}
+
+func formatEmoji(def *op.PropertyDef[op.Emoji], emoji []op.Emoji) string {
+	builder := strings.Builder{}
+	builder.WriteString("[")
+	for i, s := range emoji {
+		if i > 0 {
+			builder.WriteString(", ")
+		}
+		builder.WriteString(def.Format(s))
+	}
+	builder.WriteString("]")
+	return builder.String()
+}
+
 func (g *GUniSet) Query() error {
 	r, err := set.ParseRune(g.SetOperation)
 	if err != nil {
@@ -117,7 +144,75 @@ func (g *GUniSet) Query() error {
 	if err != nil {
 		return err
 	}
-	return ctx.Query(r, g.Writer)
+	cat := op.CAT_Cn
+	eaw := op.EAW_N
+	sc := ctx.DefRecord.ScriptDef.Unknown()
+	var emoji []op.Emoji
+	gbp := ""
+	wbp := ""
+	sbp := ""
+	var scx []op.Script
+	for cc, uniSet := range ctx.CateMap {
+		if uniSet.Find(r) {
+			cat = cc
+			break
+		}
+	}
+	for e, uniSet := range ctx.EawMap {
+		if uniSet.Find(r) {
+			eaw = e
+			break
+		}
+	}
+	for s, uniSet := range ctx.ScriptMap {
+		if uniSet.Find(r) {
+			sc = s
+			break
+		}
+	}
+	for s := range ctx.DefRecord.ScriptDef.EachScript {
+		if m, ok := ctx.ScriptXMap[s]; ok && m.Find(r) {
+			scx = append(scx, s) // may have multiple property
+		}
+	}
+	for s := range ctx.DefRecord.EmojiDef.EachProperty {
+		if m, ok := ctx.EmojiMap[s]; ok && m.Find(r) {
+			emoji = append(emoji, s) // may have multiple property
+		}
+	}
+	for s, uniSet := range ctx.GraphemeBreakPropMap {
+		if uniSet.Find(r) {
+			gbp = ctx.DefRecord.GraphemeBreakPropDef.Format(s)
+			break
+		}
+	}
+	for s, uniSet := range ctx.WordBreakPropMap {
+		if uniSet.Find(r) {
+			wbp = ctx.DefRecord.WordBreakPropDef.Format(s)
+			break
+		}
+	}
+	for s, uniSet := range ctx.SentenceBreakPropMap {
+		if uniSet.Find(r) {
+			sbp = ctx.DefRecord.SentenceBreakPropDef.Format(s)
+		}
+	}
+	_, err = fmt.Fprintf(g.Writer, "CodePoint: U+%04X\n"+
+		"GeneralCategory: %s\n"+
+		"EastAsianWidth: %s\n"+
+		"Script: %s\n"+
+		"ScriptExtension: %s\n"+
+		"Emoji: %s\n"+
+		"GraphemeBreak: %s\n"+
+		"WordBreak: %s\n"+
+		"SentenceBreak: %s\n", r,
+		cat.Format(ctx.AliasMapRecord.Category()),
+		eaw.Format(ctx.AliasMapRecord.Eaw()),
+		ctx.DefRecord.ScriptDef.Format(sc, ctx.AliasMapRecord.Script()),
+		formatScriptX(ctx.DefRecord.ScriptDef, scx),
+		formatEmoji(ctx.DefRecord.EmojiDef, emoji),
+		gbp, wbp, sbp)
+	return err
 }
 
 func (g *GUniSet) Info() error {
