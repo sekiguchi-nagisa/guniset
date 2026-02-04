@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -298,7 +299,7 @@ func (g *GUniSet) EnumerateProperty() error {
 		}
 		return nil
 	}
-	return fmt.Errorf("unknown property: %s", g.SetOperation)
+	return errors.New(op.UnknowPropertyPrefixError(g.SetOperation))
 }
 
 func fetchContent(url string, output string) error {

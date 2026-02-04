@@ -320,10 +320,7 @@ func (p *Parser) parsePrimary() Node {
 				return s, k
 			})
 		} else {
-			p.error(fmt.Sprintf("unknown property prefix: %s, "+
-				"must be `cat`, `gc`, `ea`, `eaw`, `sc`, `scx`, "+
-				"`prop`, `dcp`, `emoji`, `dbp`, `dnp`"+
-				"`gbp`, `wbp` or `sbp`", prefix.text))
+			p.error(UnknowPropertyPrefixError(prefix.text))
 		}
 	case TokenRune:
 		first := p.parseRune()

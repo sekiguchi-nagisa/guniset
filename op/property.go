@@ -369,3 +369,10 @@ const SentenceBreakPropPrefix = "sbp"
 func IsSentenceBreakPropertyPrefix(s string) bool {
 	return s == SentenceBreakPropPrefix
 }
+
+func UnknowPropertyPrefixError(prefix string) string {
+	return fmt.Sprintf("unknown property prefix: %s, "+
+		"must be `cat`, `gc`, `ea`, `eaw`, `sc`, `scx`, "+
+		"`prop`, `dcp`, `emoji`, `dbp`, `dnp`"+
+		"`gbp`, `wbp` or `sbp`", prefix)
+}
