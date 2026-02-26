@@ -30,6 +30,7 @@ having the following data
 * ``GraphemeBreakProperty.txt``
 * ``WordBreakProperty.txt``
 * ``SentenceBreakProperty.txt``
+* ``CaseFolding.txt``
 
 ## Set Operation
 
@@ -40,6 +41,7 @@ having the following data
 * ``*``: intersection
 * ``!``: complement
 * ``( )``: grouping
+* ``@fold( )``: simple case folding
 
 ### Primitives
 
@@ -72,6 +74,7 @@ IntersectionExpression
 ComplementExpression
     : PrimaryExpression
     | '!' ComplementExpression
+    | '@' 'fold' '(' Expression ')'
 
 PrimaryExpression
     : ('cat' | 'gc') ':' CateList 

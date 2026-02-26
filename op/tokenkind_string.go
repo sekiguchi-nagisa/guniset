@@ -18,13 +18,14 @@ func _() {
 	_ = x[TokenPlus-7]
 	_ = x[TokenMinus-8]
 	_ = x[TokenMul-9]
-	_ = x[TokenRange-10]
-	_ = x[TokenSpace-11]
+	_ = x[TokenAt-10]
+	_ = x[TokenRange-11]
+	_ = x[TokenSpace-12]
 }
 
-const _TokenKind_name = "identifiercodePoint:,()!+-*..space"
+const _TokenKind_name = "identifiercodePoint:,()!+-*@..space"
 
-var _TokenKind_index = [...]uint8{0, 10, 19, 20, 21, 22, 23, 24, 25, 26, 27, 29, 34}
+var _TokenKind_index = [...]uint8{0, 10, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 30, 35}
 
 func (i TokenKind) String() string {
 	idx := int(i) - 0

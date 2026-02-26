@@ -22,6 +22,7 @@ const (
 	TokenPlus                    // +
 	TokenMinus                   // -
 	TokenMul                     // *
+	TokenAt                      // @
 	TokenRange                   // ..
 	TokenSpace                   // space
 )
@@ -45,6 +46,7 @@ var lexemes = []Lexeme{
 	{regexp.MustCompile(`^[*]`), TokenMul},
 	{regexp.MustCompile(`^[.][.]`), TokenRange},
 	{regexp.MustCompile(`^[ \t\n]+`), TokenSpace},
+	{regexp.MustCompile(`^@`), TokenAt},
 }
 
 type Token struct {
@@ -342,12 +344,31 @@ func (p *Parser) parsePrimary() Node {
 }
 
 func (p *Parser) parseComplement() Node {
-	if p.fetch().kind == TokenNegate {
+	kind := p.fetch().kind
+	if kind == TokenNegate {
 		p.consume()
 		node := p.parseComplement()
 		return &CompNode{node: node}
 	}
+	if kind == TokenAt {
+		p.consume()
+		return p.parseFunc()
+	}
 	return p.parsePrimary()
+}
+
+func (p *Parser) parseFunc() Node {
+	token := p.expect(TokenId)
+	p.expect(TokenLParen)
+	switch token.text {
+	case "fold":
+		node := p.parseUnionOrDiff()
+		p.expect(TokenRParen)
+		return &CaseFoldNode{node}
+	default:
+		p.error(fmt.Sprintf("unknown function: %s", token.text))
+	}
+	return nil
 }
 
 func (p *Parser) parseIntersect() Node {

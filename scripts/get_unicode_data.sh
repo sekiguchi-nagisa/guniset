@@ -42,3 +42,6 @@ curl "https://www.unicode.org/Public/$REV/ucd/auxiliary/WordBreakProperty.txt" \
 
 curl "https://www.unicode.org/Public/$REV/ucd/auxiliary/SentenceBreakProperty.txt" \
   > ./unicode_dir/SentenceBreakProperty.txt || { echo failed; exit 1; }
+
+curl "https://www.unicode.org/Public/$REV/ucd/CaseFolding.txt" \
+  > ./unicode_dir/CaseFolding.txt || { echo failed; exit 1; }

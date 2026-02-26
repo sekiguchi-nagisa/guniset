@@ -44,6 +44,7 @@ type UnicodeData struct {
 	GraphemeBreakProperty     string // GraphemeBreakProperty.txt
 	WordBreakProperty         string // WordBreakProperty.txt
 	SentenceBreakProperty     string // SentenceBreakProperty.txt
+	CaseFolding               string // CaseFolding.txt
 }
 
 func NewUnicodeData(unicodeDir string) *UnicodeData {
@@ -61,6 +62,7 @@ func NewUnicodeData(unicodeDir string) *UnicodeData {
 		GraphemeBreakProperty:     path.Join(unicodeDir, "GraphemeBreakProperty.txt"),
 		WordBreakProperty:         path.Join(unicodeDir, "WordBreakProperty.txt"),
 		SentenceBreakProperty:     path.Join(unicodeDir, "SentenceBreakProperty.txt"),
+		CaseFolding:               path.Join(unicodeDir, "CaseFolding.txt"),
 	}
 }
 
@@ -94,6 +96,7 @@ type EvalContext struct {
 	GraphemeBreakPropMap        UniSetMap[GraphemeBreakProperty]
 	WordBreakPropMap            UniSetMap[WordBreakProperty]
 	SentenceBreakPropMap        UniSetMap[SentenceBreakProperty]
+	CaseFoldingMap              map[rune]rune
 }
 
 func NewEvalContext(data *UnicodeData) (*EvalContext, error) {
@@ -150,6 +153,11 @@ func NewEvalContext(data *UnicodeData) (*EvalContext, error) {
 	if err != nil {
 		return nil, err
 	}
+	caseFoldingMap, err := LoadCaseFoldingMap(data.CaseFolding, &headers)
+	if err != nil {
+		return nil, err
+	}
+
 	return &EvalContext{
 		Headers:        headers,
 		CateMap:        catMap,
@@ -176,6 +184,7 @@ func NewEvalContext(data *UnicodeData) (*EvalContext, error) {
 		GraphemeBreakPropMap:        graphemePropMap,
 		WordBreakPropMap:            wordPropMap,
 		SentenceBreakPropMap:        sentencePropMap,
+		CaseFoldingMap:              caseFoldingMap,
 	}, nil
 }
 
@@ -536,4 +545,36 @@ func LoadPropertyMapWithJoin[T ~int](filename string, dbInfoList *DataHeaders, j
 
 func LoadPropertyMap[T ~int](filename string, dbInfoList *DataHeaders) (def *PropertyDef[T], setMap UniSetMap[T], e error) {
 	return LoadPropertyMapWithJoin[T](filename, dbInfoList, false)
+}
+
+func LoadCaseFoldingMap(filename string, dbInfoList *DataHeaders) (map[rune]rune, error) {
+	caseFoldingMap := map[rune]rune{}
+	loader, err := NewDataLoader(filename)
+	if err != nil {
+		return nil, err
+	}
+	err = loader.Load(func(line string) error {
+		ss := strings.Split(line, ";")
+		if len(ss) != 4 {
+			return fmt.Errorf("invalid case folding map: %s", line)
+		}
+		before := strings.TrimSpace(ss[0])
+		t := strings.TrimSpace(ss[1])
+		after := strings.TrimSpace(ss[2])
+		if t != "C" && t != "S" {
+			return nil
+		}
+		beforeRune, err := set.ParseRune(before)
+		if err != nil {
+			return err
+		}
+		afterRune, err := set.ParseRune(after)
+		if err != nil {
+			return err
+		}
+		caseFoldingMap[beforeRune] = afterRune
+		return nil
+	})
+	dbInfoList.List = append(dbInfoList.List, loader.header)
+	return caseFoldingMap, err
 }

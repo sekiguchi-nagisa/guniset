@@ -187,3 +187,23 @@ func (i *IntersectNode) Eval(context *EvalContext) set.UniSet {
 	newSet := leftSet.AndSet(&rightSet)
 	return newSet
 }
+
+type CaseFoldNode struct {
+	node Node
+}
+
+func (c *CaseFoldNode) Eval(context *EvalContext) set.UniSet {
+	retSet := c.node.Eval(context)
+	if len(context.CaseFoldingMap) == 0 {
+		return retSet
+	}
+	builder := set.UniSetBuilder{}
+	for r := range retSet.Iter {
+		if to, ok := context.CaseFoldingMap[r]; ok {
+			builder.Add(to)
+		} else {
+			builder.Add(r)
+		}
+	}
+	return builder.Build()
+}

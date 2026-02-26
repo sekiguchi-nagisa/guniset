@@ -341,6 +341,7 @@ func fetchUnicodeData(rev string, output string) error {
 		"Scripts.txt", "ScriptExtensions.txt", "PropList.txt", "DerivedCoreProperties.txt",
 		"emoji/emoji-data.txt", "extracted/DerivedBinaryProperties.txt", "DerivedNormalizationProps.txt",
 		"auxiliary/GraphemeBreakProperty.txt", "auxiliary/WordBreakProperty.txt", "auxiliary/SentenceBreakProperty.txt",
+		"CaseFolding.txt",
 	}
 	if rev == "latest" {
 		rev = "UCD/latest"

@@ -31,6 +31,11 @@ var lexerTestCases = []struct {
 		{TokenMul, "*"}, {TokenSpace, " "},
 		{TokenId, "eaw"}, {TokenColon, ":"},
 		{TokenId, "F"}}},
+	{"@fold(cat:Lu)", []Token{
+		{TokenAt, "@"}, {TokenId, "fold"},
+		{TokenLParen, "("}, {TokenId, "cat"},
+		{TokenColon, ":"}, {TokenId, "Lu"},
+		{TokenRParen, ")"}}},
 }
 
 func TestLexer(t *testing.T) {
@@ -152,4 +157,29 @@ func TestParserBinaryPrecedence(t *testing.T) {
 	assert.IsType(t, &IntersectNode{}, node.(*UnionNode).right)
 	assert.IsType(t, &RangeNode{}, node.(*UnionNode).right.(*IntersectNode).left)
 	assert.IsType(t, &EastAsianWidthNode{}, node.(*UnionNode).right.(*IntersectNode).right)
+}
+
+func TestParserCaseFold(t *testing.T) {
+	aliasMaps := NewAliasMapRecord()
+
+	node, err := NewParser(aliasMaps, nil).Run([]byte("@fold(41..5A)"))
+	assert.Nil(t, err)
+	assert.IsType(t, &CaseFoldNode{}, node)
+	assert.IsType(t, &RangeNode{}, node.(*CaseFoldNode).node)
+
+	// combination with other operators
+	node, err = NewParser(aliasMaps, nil).Run([]byte("@fold(cat:Lu) + 0FeFf"))
+	assert.Nil(t, err)
+	assert.IsType(t, &UnionNode{}, node)
+	assert.IsType(t, &CaseFoldNode{}, node.(*UnionNode).left)
+
+	// nested
+	node, err = NewParser(aliasMaps, nil).Run([]byte("@fold(@fold(41..5A))"))
+	assert.Nil(t, err)
+	assert.IsType(t, &CaseFoldNode{}, node)
+	assert.IsType(t, &CaseFoldNode{}, node.(*CaseFoldNode).node)
+
+	// unknown builtin
+	_, err = NewParser(aliasMaps, nil).Run([]byte("@unknown(41)"))
+	assert.NotNil(t, err)
 }
