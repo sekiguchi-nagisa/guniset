@@ -176,7 +176,7 @@ func (d *DiffNode) Eval(context *EvalContext) set.UniSet {
 	return leftSet
 }
 
-type IntersectNode struct {
+type IntersectNode struct { // SET * SET
 	left  Node
 	right Node
 }
@@ -188,7 +188,7 @@ func (i *IntersectNode) Eval(context *EvalContext) set.UniSet {
 	return newSet
 }
 
-type CaseFoldNode struct {
+type CaseFoldNode struct { // @fold(SET)
 	node Node
 }
 

@@ -12,7 +12,8 @@ import (
 type TokenKind int
 
 const (
-	TokenId     TokenKind = iota // identifier
+	TokenEOS    TokenKind = iota // EOS
+	TokenId                      // identifier
 	TokenRune                    // codePoint
 	TokenColon                   // :
 	TokenComma                   // ,
@@ -98,12 +99,12 @@ func (p *Parser) hasNext() bool {
 	return p.pos < len(p.tokens)
 }
 
-func (p *Parser) fetch() *Token {
+func (p *Parser) fetch() Token {
 	if p.hasNext() {
-		return &p.tokens[p.pos]
+		return p.tokens[p.pos]
 	}
 	p.error("unexpected end of token")
-	return nil
+	return Token{TokenEOS, ""}
 }
 
 func (p *Parser) consume() {
@@ -117,7 +118,7 @@ func (p *Parser) skipSpace() {
 	}
 }
 
-func (p *Parser) expect(kind TokenKind) *Token {
+func (p *Parser) expect(kind TokenKind) Token {
 	token := p.fetch()
 	if token.kind != kind {
 		p.error(fmt.Sprintf("token mismatched, expect: %s, actual: %s", kind.String(),
@@ -344,17 +345,17 @@ func (p *Parser) parsePrimary() Node {
 }
 
 func (p *Parser) parseComplement() Node {
-	kind := p.fetch().kind
-	if kind == TokenNegate {
+	switch p.fetch().kind {
+	case TokenNegate:
 		p.consume()
 		node := p.parseComplement()
-		return &CompNode{node: node}
-	}
-	if kind == TokenAt {
+		return &CompNode{node}
+	case TokenAt:
 		p.consume()
 		return p.parseFunc()
+	default:
+		return p.parsePrimary()
 	}
-	return p.parsePrimary()
 }
 
 func (p *Parser) parseFunc() Node {
