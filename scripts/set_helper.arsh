@@ -18,28 +18,32 @@ function try_merge(o : Range) : Range? for Range {
     return $none
 }
 
+function _minimize(set: [Range]) {
+    var new_values: [Range]
+    var old_values = $set.sortBy(function(x, y)=>$x.compare($y))
+    for value in $old_values {
+        if $new_values.empty() {
+            $new_values.add($value)
+            continue
+        }
+        if let v = $new_values.peek().try_merge($value) {
+            $new_values.pop()
+            $new_values.push($v)
+            continue
+        }
+        $new_values.add($value)
+    }
+    $set.clear()
+    $set.addAll($new_values)
+}
+
 function minimize(map: [String: [Range]]) {
     var keys : [String]
     for key, _ in $map {
         $keys.add($key)
     }
-
     for key in $keys {
-        var new_values: [Range]
-        var old_values = $map[$key].sortBy(function(x, y)=>$x.compare($y))
-        for value in $old_values {
-            if $new_values.empty() {
-                $new_values.add($value)
-                continue
-            }
-            if let v = $new_values.peek().try_merge($value) {
-                $new_values.pop()
-                $new_values.push($v)
-                continue
-            }
-            $new_values.add($value)
-        }
-        $map[$key] = $new_values
+        $_minimize($map[$key])
     }
 }
 

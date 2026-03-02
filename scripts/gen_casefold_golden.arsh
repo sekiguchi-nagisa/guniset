@@ -1,0 +1,68 @@
+#!/usr/bin/env arsh
+
+source $SCRIPT_DIR/set_helper.arsh
+
+# generate golden files for general category
+
+var REV="16.0.0"
+
+let output_dir = $1.realpath()
+
+test -f CaseFolding.txt ||
+  curl "https://www.unicode.org/Public/$REV/ucd/CaseFolding.txt" \
+    > ./CaseFolding.txt
+
+# var count =0 
+# for line in <(cat ./CaseFolding.txt) {
+#   $count++
+#   ($line.empty() || $line.startsWith('#')) && continue
+#   var matched = $/^(?<first>[0-9A-F]+)(\.\.(?<last>[0-9A-F]+))?[ ]*;[ ]+(?<cat>[A-Z][a-z]) #.+$/.match($line) ?? 
+#   {echo failed at $count: $line; exit 1;}
+#   var first = $matched.named('first')!
+#   var last =  $matched.named('last') ?? $first
+#   var r = "{ 0x$first, 0x$last },"
+#   $cate_map[$matched.named('cat')!].add($r)
+# }
+
+var mapping: [String:String]
+var count = 0;
+for line in <(cat ./CaseFolding.txt) {
+  $count++
+  ($line.empty() || $line.startsWith('#')) && continue
+  (!$line.contains("; C; ") && !$line.contains("; S; ")) && continue
+  var matched = $/^(?<before>[0-9A-F]+); [CS]; (?<after>[0-9A-F]+); #.+$/.match($line) ?? { echo failed at $count: $line; exit 1;}
+  var before = $matched.named('before')!
+  var after = $matched.named('after')!
+  $mapping[$before] = $after
+}
+
+assert $mapping.size() > 0
+
+# output
+{
+  echo "@fold("
+  var c = 0;
+  for b,_ in $mapping {
+    if $c == $mapping.size() - 1 {
+      printf "  U+%s\n" $b
+    } else {
+      printf "  U+%s +\n" $b
+    }
+    $c++
+  }
+  echo ")"
+} with > $output_dir/casefold.test
+
+var after_set : [String:Bool]
+for _, a in $mapping {
+  $after_set[$a] = $true
+}
+var after_values : [Range]
+for k,_ in $after_set {
+  $after_values.add(new Range($k, $k))
+}
+$minimize(["fold": $after_values])
+
+for v in $after_values {
+  echo "{ 0x${v.first}, 0x${v.last} },"
+} with > $output_dir/casefold.golden
