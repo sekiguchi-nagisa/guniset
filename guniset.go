@@ -136,9 +136,9 @@ func formatEmoji(def *op.PropertyDef[op.Emoji], emoji []op.Emoji) string {
 	return builder.String()
 }
 
-func (g *GUniSet) Query(as_string bool) error {
+func (g *GUniSet) Query(asString bool) error {
 	var r rune
-	if as_string {
+	if asString {
 		rr := []rune(g.SetOperation)
 		if len(rr) != 1 {
 			return errors.New("invalid string. must be exactly one rune")
