@@ -136,10 +136,20 @@ func formatEmoji(def *op.PropertyDef[op.Emoji], emoji []op.Emoji) string {
 	return builder.String()
 }
 
-func (g *GUniSet) Query() error {
-	r, err := set.ParseRune(g.SetOperation)
-	if err != nil {
-		return err
+func (g *GUniSet) Query(as_string bool) error {
+	var r rune
+	if as_string {
+		rr := []rune(g.SetOperation)
+		if len(rr) != 1 {
+			return errors.New("invalid string. must be exactly one rune")
+		}
+		r = rr[0]
+	} else {
+		r1, err := set.ParseRune(g.SetOperation)
+		if err != nil {
+			return err
+		}
+		r = r1
 	}
 	ctx, err := g.prepare()
 	if err != nil {

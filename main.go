@@ -15,6 +15,7 @@ type CLIGen struct {
 }
 
 type CLIQuery struct {
+	String    bool   `optional:"" short:"s" default:"false" help:"treat as UTF-8 string"`
 	CodePoint string `arg:"" required:"" help:"Specify code point to query"`
 }
 
@@ -107,7 +108,7 @@ func (c *CLIQuery) Run() error {
 	if err != nil {
 		return err
 	}
-	return g.Query()
+	return g.Query(c.String)
 }
 
 func (c *CLIInfo) Run() error {
