@@ -243,67 +243,58 @@ func (g *GUniSet) EnumerateProperty() error {
 	if err != nil {
 		return err
 	}
-	if op.IsGeneralCategoryPrefix(g.SetOperation) {
+	switch {
+	case op.IsGeneralCategoryPrefix(g.SetOperation):
 		for cat := range op.EachGeneralCategoryAll {
 			_, _ = fmt.Fprintln(g.Writer, cat.Format(ctx.AliasMapRecord.Category()))
 		}
 		return nil
-	}
-	if op.IsEastAsianWidthPrefix(g.SetOperation) {
+	case op.IsEastAsianWidthPrefix(g.SetOperation):
 		for eaw := range op.EachEastAsianWidth {
 			_, _ = fmt.Fprintln(g.Writer, eaw.Format(ctx.AliasMapRecord.Eaw()))
 		}
 		return nil
-	}
-	if op.IsScriptPrefix(g.SetOperation) || op.IsScriptExtensionPrefix(g.SetOperation) {
+	case op.IsScriptPrefix(g.SetOperation) || op.IsScriptExtensionPrefix(g.SetOperation):
 		for sc := range ctx.DefRecord.ScriptDef.EachScript {
 			_, _ = fmt.Fprintln(g.Writer, ctx.DefRecord.ScriptDef.Format(sc, ctx.AliasMapRecord.Script()))
 		}
 		return nil
-	}
-	if op.IsPropListPrefix(g.SetOperation) {
+	case op.IsPropListPrefix(g.SetOperation):
 		for prop := range ctx.DefRecord.PropListDef.EachProperty {
 			_, _ = fmt.Fprintln(g.Writer, ctx.DefRecord.PropListDef.Format(prop))
 		}
 		return nil
-	}
-	if op.IsDerivedCorePropertyPrefix(g.SetOperation) {
+	case op.IsDerivedCorePropertyPrefix(g.SetOperation):
 		for prop := range ctx.DefRecord.DerivedCorePropDef.EachProperty {
 			_, _ = fmt.Fprintln(g.Writer, ctx.DefRecord.DerivedCorePropDef.Format(prop))
 		}
 		return nil
-	}
-	if op.IsEmojiPrefix(g.SetOperation) {
+	case op.IsEmojiPrefix(g.SetOperation):
 		for prop := range ctx.DefRecord.EmojiDef.EachProperty {
 			_, _ = fmt.Fprintln(g.Writer, ctx.DefRecord.EmojiDef.Format(prop))
 		}
 		return nil
-	}
-	if op.IsDerivedBinaryPropertyPrefix(g.SetOperation) {
+	case op.IsDerivedBinaryPropertyPrefix(g.SetOperation):
 		for prop := range ctx.DefRecord.DerivedBinaryPropDef.EachProperty {
 			_, _ = fmt.Fprintln(g.Writer, ctx.DefRecord.DerivedBinaryPropDef.Format(prop))
 		}
 		return nil
-	}
-	if op.IsDerivedNormalizationPropPrefix(g.SetOperation) {
+	case op.IsDerivedNormalizationPropPrefix(g.SetOperation):
 		for prop := range ctx.DefRecord.DerivedNormalizationPropDef.EachProperty {
 			_, _ = fmt.Fprintln(g.Writer, ctx.DefRecord.DerivedNormalizationPropDef.Format(prop))
 		}
 		return nil
-	}
-	if op.IsGraphemeBreakPropertyPrefix(g.SetOperation) {
+	case op.IsGraphemeBreakPropertyPrefix(g.SetOperation):
 		for prop := range ctx.DefRecord.GraphemeBreakPropDef.EachProperty {
 			_, _ = fmt.Fprintln(g.Writer, ctx.DefRecord.GraphemeBreakPropDef.Format(prop))
 		}
 		return nil
-	}
-	if op.IsWordBreakPropertyPrefix(g.SetOperation) {
+	case op.IsWordBreakPropertyPrefix(g.SetOperation):
 		for prop := range ctx.DefRecord.WordBreakPropDef.EachProperty {
 			_, _ = fmt.Fprintln(g.Writer, ctx.DefRecord.WordBreakPropDef.Format(prop))
 		}
 		return nil
-	}
-	if op.IsSentenceBreakPropertyPrefix(g.SetOperation) {
+	case op.IsSentenceBreakPropertyPrefix(g.SetOperation):
 		for prop := range ctx.DefRecord.SentenceBreakPropDef.EachProperty {
 			_, _ = fmt.Fprintln(g.Writer, ctx.DefRecord.SentenceBreakPropDef.Format(prop))
 		}
