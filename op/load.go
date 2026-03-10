@@ -96,7 +96,7 @@ type EvalContext struct {
 	GraphemeBreakPropMap        UniSetMap[GraphemeBreakProperty]
 	WordBreakPropMap            UniSetMap[WordBreakProperty]
 	SentenceBreakPropMap        UniSetMap[SentenceBreakProperty]
-	CaseFoldingMap              map[rune]rune
+	CaseFoldingMap              *CaseFoldMap
 }
 
 func NewEvalContext(data *UnicodeData) (*EvalContext, error) {
@@ -547,12 +547,12 @@ func LoadPropertyMap[T ~int](filename string, dbInfoList *DataHeaders) (def *Pro
 	return LoadPropertyMapWithJoin[T](filename, dbInfoList, false)
 }
 
-func LoadCaseFoldingMap(filename string, dbInfoList *DataHeaders) (map[rune]rune, error) {
-	caseFoldingMap := map[rune]rune{}
+func LoadCaseFoldingMap(filename string, dbInfoList *DataHeaders) (*CaseFoldMap, error) {
 	loader, err := NewDataLoader(filename)
 	if err != nil {
 		return nil, err
 	}
+	var foldPairs [][2]rune
 	err = loader.Load(func(line string) error {
 		ss := strings.Split(line, ";")
 		if len(ss) != 4 {
@@ -572,9 +572,11 @@ func LoadCaseFoldingMap(filename string, dbInfoList *DataHeaders) (map[rune]rune
 		if err != nil {
 			return err
 		}
-		caseFoldingMap[beforeRune] = afterRune
+		//caseFoldingMap[beforeRune] = afterRune
+		foldPairs = append(foldPairs, [2]rune{beforeRune, afterRune})
 		return nil
 	})
 	dbInfoList.List = append(dbInfoList.List, loader.header)
+	caseFoldingMap := NewCaseFoldMap(foldPairs)
 	return caseFoldingMap, err
 }

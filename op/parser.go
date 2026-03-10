@@ -366,6 +366,10 @@ func (p *Parser) parseFunc() Node {
 		node := p.parseUnionOrDiff()
 		p.expect(TokenRParen)
 		return &CaseFoldNode{node}
+	case "unfold":
+		node := p.parseUnionOrDiff()
+		p.expect(TokenRParen)
+		return &CaseUnfoldNode{node}
 	default:
 		p.error(fmt.Sprintf("unknown function: %s", token.text))
 	}

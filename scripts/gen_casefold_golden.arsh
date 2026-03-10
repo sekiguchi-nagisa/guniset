@@ -26,7 +26,7 @@ for line in <(cat ./CaseFolding.txt) {
 
 assert $mapping.size() > 0
 
-# output
+# output (fold)
 {
   echo "@fold("
   var c = 0;
@@ -39,7 +39,7 @@ assert $mapping.size() > 0
     $c++
   }
   echo ")"
-} with > $output_dir/casefold.test
+} with > $output_dir/fold.test
 
 var after_set : [String:Bool]
 for _, a in $mapping {
@@ -53,4 +53,71 @@ $minimize(["fold": $after_values])
 
 for v in $after_values {
   echo "{ 0x${v.first}, 0x${v.last} },"
-} with > $output_dir/casefold.golden
+} with > $output_dir/fold.golden
+
+# output (unfold)
+{
+  echo '@unfold('
+  var c = 0
+  for k,_ in $after_set {
+    if $c == $after_set.size() - 1 {
+      printf "  U+%s\n" $k
+    } else {
+      printf "  U+%s +\n" $k
+    }
+    $c++
+  }
+  echo ")"
+} with > $output_dir/unfold.test
+
+var before_set : [String:Bool]
+for b, _ in $mapping {
+  $before_set[$b] = $true
+}
+var before_values : [Range]
+for k,_ in $before_set {
+  $before_values.add(new Range($k, $k))
+}
+$minimize(["unfold": $before_values])
+
+for v in $before_values {
+  echo "{ 0x${v.first}, 0x${v.last} },"
+} with > $output_dir/unfold.golden
+
+# output (fold-unfold)
+{
+  echo "@unfold(@fold("
+  var c = 0;
+  for b,_ in $mapping {
+    if $c == $mapping.size() - 1 {
+      printf "  U+%s\n" $b
+    } else {
+      printf "  U+%s +\n" $b
+    }
+    $c++
+  }
+  echo "))"
+} with > $output_dir/fold_unfold.test
+
+for v in $before_values {
+  echo "{ 0x${v.first}, 0x${v.last} },"
+} with > $output_dir/fold_unfold.golden
+
+# output (unfold-fold)
+{
+  echo '@fold(@unfold('
+  var c = 0
+  for k,_ in $after_set {
+    if $c == $after_set.size() - 1 {
+      printf "  U+%s\n" $k
+    } else {
+      printf "  U+%s +\n" $k
+    }
+    $c++
+  }
+  echo "))"
+} with > $output_dir/unfold_fold.test
+
+for v in $after_values {
+  echo "{ 0x${v.first}, 0x${v.last} },"
+} with > $output_dir/unfold_fold.golden

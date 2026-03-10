@@ -194,14 +194,22 @@ type CaseFoldNode struct { // @fold(SET)
 
 func (c *CaseFoldNode) Eval(context *EvalContext) set.UniSet {
 	retSet := c.node.Eval(context)
-	if len(context.CaseFoldingMap) == 0 {
-		return retSet
-	}
 	builder := set.UniSetBuilder{}
 	for r := range retSet.Iter {
-		if to, ok := context.CaseFoldingMap[r]; ok {
-			builder.Add(to)
-		} else {
+		builder.Add(context.CaseFoldingMap.LookupFold(r))
+	}
+	return builder.Build()
+}
+
+type CaseUnfoldNode struct {
+	node Node
+}
+
+func (c *CaseUnfoldNode) Eval(context *EvalContext) set.UniSet {
+	retSet := c.node.Eval(context)
+	builder := set.UniSetBuilder{}
+	for r := range retSet.Iter {
+		for _, r := range context.CaseFoldingMap.LookupUnfold(r) {
 			builder.Add(r)
 		}
 	}

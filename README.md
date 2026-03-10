@@ -42,6 +42,7 @@ having the following data
 * ``!``: complement
 * ``( )``: grouping
 * ``@fold( )``: simple case folding
+* ``@unfold( )``: reverse case folding
 
 ### Primitives
 
