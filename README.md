@@ -75,7 +75,10 @@ IntersectionExpression
 ComplementExpression
     : PrimaryExpression
     | '!' ComplementExpression
-    | '@' 'fold' '(' Expression ')'
+    | '@' Builtin '(' Expression ')'
+
+Builtin
+    : 'fold' | 'unfold'
 
 PrimaryExpression
     : ('cat' | 'gc') ':' CateList 
