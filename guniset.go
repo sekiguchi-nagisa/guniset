@@ -10,6 +10,7 @@ import (
 	"os"
 	"path"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/sekiguchi-nagisa/guniset/op"
@@ -362,6 +363,52 @@ func fetchContent(url string, output string) error {
 
 var revPattern = regexp.MustCompile(`^[1-9][0-9]+\.[0-9]+\.[0-9]+$`)
 
+type Revision struct {
+	major, minor, patch int
+}
+
+func NewRevision(rev string) (*Revision, error) {
+	rev1s := strings.Split(rev, ".")
+	if len(rev1s) != 3 {
+		return nil, fmt.Errorf("invalid revision %q", rev)
+	}
+	major, err := strconv.Atoi(rev1s[0])
+	if err != nil {
+		return nil, fmt.Errorf("invalid revision %q", rev)
+	}
+	minor, err := strconv.Atoi(rev1s[1])
+	if err != nil {
+		return nil, fmt.Errorf("invalid revision %q", rev)
+	}
+	patch, err := strconv.Atoi(rev1s[2])
+	if err != nil {
+		return nil, fmt.Errorf("invalid revision %q", rev)
+	}
+	return &Revision{major, minor, patch}, nil
+}
+
+func (rev *Revision) Compare(rev2 *Revision) int {
+	if rev.major != rev2.major {
+		return rev.major - rev2.major
+	}
+	if rev.minor != rev2.minor {
+		return rev.minor - rev2.minor
+	}
+	return rev.patch - rev2.patch
+}
+
+func compareRevision(rev1s string, rev2s string) int {
+	rev1, err := NewRevision(rev1s)
+	if err != nil {
+		return 0
+	}
+	rev2, err := NewRevision(rev2s)
+	if err != nil {
+		return 0
+	}
+	return rev1.Compare(rev2)
+}
+
 func fetchUnicodeData(rev string, output string) error {
 	if !revPattern.MatchString(rev) && rev != "latest" {
 		return fmt.Errorf("invalid revision %q", rev)
@@ -379,6 +426,26 @@ func fetchUnicodeData(rev string, output string) error {
 	}
 	for _, target := range targets {
 		url := fmt.Sprintf("https://www.unicode.org/Public/%s/ucd/%s", rev, target)
+		log.Printf("@@ try downloading %s to %s", url, output)
+		err := fetchContent(url, path.Join(output, path.Base(target)))
+		if err != nil {
+			return err
+		}
+	}
+
+	// for emoji sequence
+	targets = []string{
+		"emoji-sequences.txt",
+		"emoji-zwj-sequences.txt",
+	}
+	for _, target := range targets {
+		var url string
+		if rev == "UCD/latest" || compareRevision(rev, "17.0.0") >= 0 {
+			url = fmt.Sprintf("https://www.unicode.org/Public/%s/emoji/%s", rev, target)
+		} else {
+			revs := strings.Split(rev, ".")
+			url = fmt.Sprintf("https://www.unicode.org/Public/emoji/%s.%s/%s", revs[0], revs[1], target)
+		}
 		log.Printf("@@ try downloading %s to %s", url, output)
 		err := fetchContent(url, path.Join(output, path.Base(target)))
 		if err != nil {

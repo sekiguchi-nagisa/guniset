@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"slices"
 	"strings"
 
 	"github.com/sekiguchi-nagisa/guniset/set"
@@ -45,6 +46,8 @@ type UnicodeData struct {
 	WordBreakProperty         string // WordBreakProperty.txt
 	SentenceBreakProperty     string // SentenceBreakProperty.txt
 	CaseFolding               string // CaseFolding.txt
+	EmojiSequences            string // emoji-sequences.txt
+	EmojiZwjSequences         string // emoji-zwj-sequences.txt
 }
 
 func NewUnicodeData(unicodeDir string) *UnicodeData {
@@ -63,10 +66,14 @@ func NewUnicodeData(unicodeDir string) *UnicodeData {
 		WordBreakProperty:         path.Join(unicodeDir, "WordBreakProperty.txt"),
 		SentenceBreakProperty:     path.Join(unicodeDir, "SentenceBreakProperty.txt"),
 		CaseFolding:               path.Join(unicodeDir, "CaseFolding.txt"),
+		EmojiSequences:            path.Join(unicodeDir, "emoji-sequences.txt"),
+		EmojiZwjSequences:         path.Join(unicodeDir, "emoji-zwj-sequences.txt"),
 	}
 }
 
 type UniSetMap[T comparable] = map[T]*set.UniSet
+
+type StringPropertyMap = map[string][]String
 
 type DefRecord struct {
 	ScriptDef                   *ScriptDef
@@ -97,6 +104,7 @@ type EvalContext struct {
 	WordBreakPropMap            UniSetMap[WordBreakProperty]
 	SentenceBreakPropMap        UniSetMap[SentenceBreakProperty]
 	CaseFoldingMap              *CaseFoldMap
+	StringPropertyMap           StringPropertyMap
 }
 
 func NewEvalContext(data *UnicodeData) (*EvalContext, error) {
@@ -157,6 +165,15 @@ func NewEvalContext(data *UnicodeData) (*EvalContext, error) {
 	if err != nil {
 		return nil, err
 	}
+	stringPropertyMap := make(StringPropertyMap)
+	err = LoadStringPropertyMap(data.EmojiSequences, &headers, stringPropertyMap)
+	if err != nil {
+		return nil, err
+	}
+	err = LoadStringPropertyMap(data.EmojiZwjSequences, &headers, stringPropertyMap)
+	if err != nil {
+		return nil, err
+	}
 
 	return &EvalContext{
 		Headers:        headers,
@@ -185,6 +202,7 @@ func NewEvalContext(data *UnicodeData) (*EvalContext, error) {
 		WordBreakPropMap:            wordPropMap,
 		SentenceBreakPropMap:        sentencePropMap,
 		CaseFoldingMap:              caseFoldingMap,
+		StringPropertyMap:           stringPropertyMap,
 	}, nil
 }
 
@@ -579,4 +597,56 @@ func LoadCaseFoldingMap(filename string, dbInfoList *DataHeaders) (*CaseFoldMap,
 	dbInfoList.List = append(dbInfoList.List, loader.header)
 	caseFoldingMap := NewCaseFoldMap(foldPairs)
 	return caseFoldingMap, err
+}
+
+func LoadStringPropertyMap(filename string, dbInfoList *DataHeaders, propertyMap StringPropertyMap) error {
+	loader, err := NewDataLoader(filename)
+	if err != nil {
+		return err
+	}
+	err = loader.Load(func(line string) error {
+		ss := strings.Split(line, ";")
+		if len(ss) < 2 {
+			return fmt.Errorf("invalid string property map: %s", line)
+		}
+		codes := strings.TrimSpace(ss[0])
+		property := strings.TrimSpace(ss[1])
+		if _, ok := propertyMap[property]; !ok {
+			propertyMap[property] = []String{}
+		}
+		if strings.Contains(codes, "..") { // range
+			ranges := strings.Split(codes, "..")
+			first, err := set.ParseRune(ranges[0])
+			if err != nil {
+				return err
+			}
+			last, err := set.ParseRune(ranges[1])
+			if err != nil {
+				return err
+			}
+			for r := first; r <= last; r++ {
+				str := NewString([]rune{r})
+				propertyMap[property] = append(propertyMap[property], str)
+			}
+		} else { //
+			var runes []rune
+			for _, c := range strings.Split(codes, " ") {
+				r, err := set.ParseRune(c)
+				if err != nil {
+					return err
+				}
+				runes = append(runes, r)
+			}
+			str := NewString(runes)
+			propertyMap[property] = append(propertyMap[property], str)
+		}
+		return nil
+	})
+	dbInfoList.List = append(dbInfoList.List, loader.header)
+	for _, v := range propertyMap {
+		slices.SortFunc(v, func(a, b String) int {
+			return strings.Compare(a.String(), b.String())
+		})
+	}
+	return err
 }
