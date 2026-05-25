@@ -90,7 +90,30 @@ func (g *GUniSet) RunAndPrint(filterOp SetFilterOp) error {
 	return PrintUniSet(uniSet, g.Writer)
 }
 
-func (g *GUniSet) RunAndSampling(seed uint64, filterOp SetFilterOp, limit *int, ratio *float64) error {
+type PrintFormat int8
+
+const (
+	CodePointFormat PrintFormat = iota
+	StringFormat
+	Utf8EscapeFormat
+)
+
+var strToPrintFormat = map[string]PrintFormat{
+	"codepoint":  CodePointFormat,
+	"string":     StringFormat,
+	"utf8escape": Utf8EscapeFormat,
+}
+
+func stringToUtf8Escape(s string) string {
+	sb := strings.Builder{}
+	for i := 0; i < len(s); i++ {
+		b := s[i]
+		sb.WriteString(fmt.Sprintf("\\x%02X", b))
+	}
+	return sb.String()
+}
+
+func (g *GUniSet) RunAndSampling(seed uint64, filterOp SetFilterOp, format PrintFormat, limit *int, ratio *float64) error {
 	uniSet, err := g.Run(filterOp)
 	if err != nil {
 		return err
@@ -105,7 +128,14 @@ func (g *GUniSet) RunAndSampling(seed uint64, filterOp SetFilterOp, limit *int, 
 	rnd := rand.New(rand.NewPCG(seed, 42))
 	sampled := uniSet.Sample(rnd, actualLimit)
 	for r := range sampled.Iter {
-		_, _ = fmt.Fprintf(g.Writer, "U+%04X\n", r)
+		switch format {
+		case CodePointFormat:
+			_, _ = fmt.Fprintf(g.Writer, "U+%04X\n", r)
+		case StringFormat:
+			_, _ = fmt.Fprintf(g.Writer, "%s\n", string(r))
+		case Utf8EscapeFormat:
+			_, _ = fmt.Fprintf(g.Writer, "%s\n", stringToUtf8Escape(string(r)))
+		}
 	}
 	return nil
 }

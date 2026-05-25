@@ -28,6 +28,7 @@ type CLISample struct {
 	Limit  *int     `optional:"" xor:"g" help:"Limit sampling count (default: 5)"`
 	Ratio  *float64 `optional:"" xor:"g" help:"Sampling ratio (up to 1.0)"`
 	Seed   *uint64  `optional:"" help:"Specify random seed. if not specified, use time.Now().UnixNano()"`
+	Format string   `optional:"" help:"Specify output format (default: codepoint)" enum:"codepoint,string,utf8escape" default:"codepoint"`
 }
 
 type CLIEnum struct {
@@ -136,13 +137,17 @@ func (c *CLISample) Run() error {
 	if !ok {
 		return fmt.Errorf("unknown filter %q\n", c.Filter)
 	}
+	format, ok := strToPrintFormat[c.Format]
+	if !ok {
+		return fmt.Errorf("unknown format %q\n", c.Format)
+	}
 	var seed uint64 = 0
 	if c.Seed != nil {
 		seed = *c.Seed
 	} else {
 		seed = uint64(time.Now().UnixNano())
 	}
-	return g.RunAndSampling(seed, printOp, c.Limit, c.Ratio)
+	return g.RunAndSampling(seed, printOp, format, c.Limit, c.Ratio)
 }
 
 func (c *CLIEnum) Run() error {
