@@ -1,0 +1,80 @@
+#!/usr/bin/env arsh
+
+var REV="16.0"
+
+let output_dir = $1.realpath()
+
+test -f ./emoji-sequences.txt ||
+  curl "https://www.unicode.org/Public/emoji/$REV/emoji-sequences.txt" \
+    > ./emoji-sequences.txt
+
+test -f ./emoji-zwj-sequences.txt ||
+  curl "https://www.unicode.org/Public/emoji/$REV/emoji-zwj-sequences.txt" \
+    > ./emoji-zwj-sequences.txt
+
+
+function utf8(code: Int): String {
+    printf -v src "\$'\\U%04X'" $code
+    var src = $reply['src']
+    var ret = $MODULE._func($src)()! as String
+    return $ret
+}
+
+function format(code: Int): String {
+    printf -v var "U+%04X" $code
+    return $reply['var']
+}
+
+type Entry = (String, [String])
+
+function load(file: String, map: [String: [Entry]]) {
+    var count = 0
+    for line in <(< $file) {
+        $count++
+        ($line.empty() || $line.startsWith('#')) && continue
+        var matched = 
+            $/^(?:(?<first>[0-9A-F]+( +[0-9A-F]+)*)|(?<first>[0-9A-F]+)\.\.(?<last>[0-9A-F]+)) *; *(?<prop>\w+) *;.*/ \
+                .match($line) ?? { echo failed at $count: $line; exit 1; }
+        var first = $matched.named('first')!
+        var last = $matched.named('last') ?? $first
+        var prop = $matched.named('prop')!
+        var entries = $map.putIfAbsent($prop, new [Entry]())
+        if $first != $last {
+            var firstC = $first.toInt(16)!
+            var lastC = $last.toInt(16)!
+            for (; $firstC <= $lastC; $firstC++) {
+                $entries.push(($utf8($firstC), [$format($firstC)]))
+            }
+        } else {
+            var ss : [String]
+            var str = ""
+            for s in $first.split(" ") {
+                $ss.push("U+$s")
+                $str += $utf8($s.toInt(16)!)
+            }
+            $entries.push(($str, $ss))
+        }
+    }
+}
+
+var seqMap : [String: [Entry]]
+$load('./emoji-sequences.txt', $seqMap)
+$load('./emoji-zwj-sequences.txt', $seqMap)
+
+{
+    var entries : [Entry]
+    for _,v in $seqMap {
+        $v.sortBy(function(x, y) => $x._0.compare($y._0))
+        $entries.addAll($v)
+    }
+    $entries.sortBy(function(x, y) => $x._0.compare($y._0))
+    $seqMap.put('RGI_Emoji', $entries)
+}
+
+# output
+for k, v in $seqMap {
+    for vv in $v {
+        echo ${vv._1}
+    } with > $output_dir/string_${$k.lower()}.golden
+    echo $k > $output_dir/string_${$k.lower()}.test
+}

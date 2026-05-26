@@ -28,7 +28,12 @@ type CLISample struct {
 	Limit  *int     `optional:"" xor:"g" help:"Limit sampling count (default: 5)"`
 	Ratio  *float64 `optional:"" xor:"g" help:"Sampling ratio (up to 1.0)"`
 	Seed   *uint64  `optional:"" help:"Specify random seed. if not specified, use time.Now().UnixNano()"`
-	Format string   `optional:"" help:"Specify output format (default: codepoint)" enum:"codepoint,string,utf8escape" default:"codepoint"`
+	Format string   `optional:"" help:"Specify output format (codepoint, string, utf8escape. default: codepoint)" enum:"codepoint,string,utf8escape" default:"codepoint"`
+}
+
+type CLIStrings struct {
+	Property string `arg:"" help:"Specify string property"`
+	Format   string `optional:"" help:"Specify output format (codepoint, string, utf8escape. default: codepoint)" enum:"codepoint,string,utf8escape" default:"codepoint"`
 }
 
 type CLIEnum struct {
@@ -46,6 +51,7 @@ var CLI struct {
 	Query    CLIQuery         `cmd:"" help:"Query code point property"`
 	Info     CLIInfo          `cmd:"" help:"Show information about Unicode database"`
 	Sample   CLISample        `cmd:"" help:"Sample Unicode code points"`
+	Strings  CLIStrings       `cmd:"" help:"Show Unicode string property"`
 	Enum     CLIEnum          `cmd:"" help:"Enumerate Unicode properties"`
 	Download CLIDownload      `cmd:"" help:"Download Unicode database"`
 }
@@ -148,6 +154,22 @@ func (c *CLISample) Run() error {
 		seed = uint64(time.Now().UnixNano())
 	}
 	return g.RunAndSampling(seed, printOp, format, c.Limit, c.Ratio)
+}
+
+func (c *CLIStrings) Run() error {
+	gunisetDir, err := resolveGunisetDir()
+	if err != nil {
+		return err
+	}
+	g, err := NewGUniSetFromDir(gunisetDir, os.Stdout, c.Property)
+	if err != nil {
+		return err
+	}
+	format, ok := strToPrintFormat[c.Format]
+	if !ok {
+		return fmt.Errorf("unknown format %q\n", c.Format)
+	}
+	return g.RunStrings(format)
 }
 
 func (c *CLIEnum) Run() error {

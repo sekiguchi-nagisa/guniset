@@ -12,3 +12,4 @@ shctl set errraise
 
 ./scripts/run_e2e_generate_test.arsh $bin
 ./scripts/run_e2e_enum_test.arsh $bin
+./scripts/run_e2e_string_test.arsh $bin

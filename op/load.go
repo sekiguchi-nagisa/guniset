@@ -73,8 +73,6 @@ func NewUnicodeData(unicodeDir string) *UnicodeData {
 
 type UniSetMap[T comparable] = map[T]*set.UniSet
 
-type StringPropertyMap = map[string][]String
-
 type DefRecord struct {
 	ScriptDef                   *ScriptDef
 	PropListDef                 *PropertyDef[PropList]

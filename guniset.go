@@ -141,6 +141,40 @@ func (g *GUniSet) RunAndSampling(seed uint64, filterOp SetFilterOp, format Print
 	return nil
 }
 
+func (g *GUniSet) RunStrings(format PrintFormat) error {
+	ctx, err := op.NewEvalContext(g.UnicodeData)
+	if err != nil {
+		return err
+	}
+	if g.SetOperation == "" {
+		list := op.Properties(ctx.StringPropertyMap)
+		_, _ = fmt.Fprintf(g.Writer, "must be: %s\n", strings.Join(list, ", "))
+		return nil
+	}
+	if values := op.LookupStringPropertyValues(ctx.StringPropertyMap, g.SetOperation); len(values) > 0 {
+		for _, v := range values {
+			switch format {
+			case CodePointFormat:
+				for i, r := range v.Runes() {
+					if i > 0 {
+						_, _ = fmt.Fprintf(g.Writer, " ")
+					}
+					_, _ = fmt.Fprintf(g.Writer, "U+%04X", r)
+				}
+				_, _ = fmt.Fprintf(g.Writer, "\n")
+			case StringFormat:
+				_, _ = fmt.Fprintf(g.Writer, "%s\n", v.String())
+			case Utf8EscapeFormat:
+				_, _ = fmt.Fprintf(g.Writer, "%s\n", stringToUtf8Escape(v.String()))
+			}
+		}
+		return nil
+	}
+	list := op.Properties(ctx.StringPropertyMap)
+	return fmt.Errorf("unsupported string property: %s\nmust be: %s",
+		g.SetOperation, strings.Join(list, ", "))
+}
+
 func formatScriptX(def *op.ScriptDef, scx []op.Script) string {
 	builder := strings.Builder{}
 	builder.WriteString("[")
@@ -400,11 +434,11 @@ func (rev *Revision) Compare(rev2 *Revision) int {
 func compareRevision(rev1s string, rev2s string) int {
 	rev1, err := NewRevision(rev1s)
 	if err != nil {
-		return 0
+		return -1
 	}
 	rev2, err := NewRevision(rev2s)
 	if err != nil {
-		return 0
+		return 1
 	}
 	return rev1.Compare(rev2)
 }

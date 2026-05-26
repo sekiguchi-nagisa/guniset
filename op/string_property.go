@@ -1,7 +1,7 @@
 package op
 
 import (
-	"fmt"
+	"slices"
 	"strings"
 )
 
@@ -22,12 +22,28 @@ func (s String) Runes() []rune {
 	return s.runes
 }
 
-func (s String) Utf8Escaped() string {
-	v := s.String()
-	sb := strings.Builder{}
-	for i := 0; i < len(v); i++ {
-		b := v[i]
-		sb.WriteString(fmt.Sprintf("\\x%02X", b))
+type StringPropertyMap = map[string][]String
+
+func LookupStringPropertyValues(propertyMap StringPropertyMap, property string) []String {
+	if property == "RGI_Emoji" {
+		var list []String
+		for _, v := range propertyMap {
+			list = append(list, v...)
+		}
+		slices.SortFunc(list, func(a, b String) int {
+			return strings.Compare(a.String(), b.String())
+		})
+		return list
 	}
-	return sb.String()
+	return propertyMap[property]
+}
+
+func Properties(propertyMap StringPropertyMap) []string {
+	var list []string
+	for k := range propertyMap {
+		list = append(list, k)
+	}
+	list = append(list, "RGI_Emoji")
+	slices.Sort(list)
+	return list
 }
