@@ -216,8 +216,7 @@ func (e *EvalContext) FillEawN() *set.UniSet {
 			builder.AddSet(e.EawMap[eaw])
 		}
 	}
-	removing := builder.Build()
-	tmpSet.RemoveSet(&removing)
+	tmpSet.RemoveSet(new(builder.Build()))
 	e.EawMap[EAW_N] = &tmpSet
 	return e.EawMap[EAW_N]
 }
@@ -234,8 +233,7 @@ func (e *EvalContext) FillScriptUnknown() *set.UniSet {
 			builder.AddSet(e.ScriptMap[sc])
 		}
 	}
-	removing := builder.Build()
-	tmpSet.RemoveSet(&removing)
+	tmpSet.RemoveSet(new(builder.Build()))
 	e.ScriptMap[e.DefRecord.ScriptDef.Unknown()] = &tmpSet
 	return e.ScriptMap[e.DefRecord.ScriptDef.Unknown()]
 }
@@ -382,8 +380,7 @@ func LoadGeneralCategoryMap(filename string, dbInfoList *DataHeaders) (setMap Un
 	// build
 	setMap = map[GeneralCategory]*set.UniSet{}
 	for cate, builder := range builderMap {
-		tmp := builder.Build()
-		setMap[cate] = &tmp
+		setMap[cate] = new(builder.Build())
 	}
 	dbInfoList.List = append(dbInfoList.List, loader.header)
 	return
@@ -420,8 +417,7 @@ func LoadEastAsianWidthMap(filename string, dbInfoList *DataHeaders) (setMap Uni
 	// build
 	setMap = map[EastAsianWidth]*set.UniSet{}
 	for cate, builder := range builderMap {
-		tmp := builder.Build()
-		setMap[cate] = &tmp
+		setMap[cate] = new(builder.Build())
 	}
 	dbInfoList.List = append(dbInfoList.List, loader.header)
 	return
@@ -476,8 +472,7 @@ func LoadScriptMap(filename string, aliasMap *AliasMap, dbInfoList *DataHeaders)
 	// build
 	setMap = map[Script]*set.UniSet{}
 	for cate, builder := range builderMap {
-		tmp := builder.Build()
-		setMap[cate] = &tmp
+		setMap[cate] = new(builder.Build())
 	}
 	dbInfoList.List = append(dbInfoList.List, loader.header)
 	return scriptDef, setMap, nil
@@ -512,8 +507,7 @@ func LoadScriptXMap(filename string, def *ScriptDef, aliasMap *AliasMap, dbInfoL
 	// build
 	setMap = map[Script]*set.UniSet{}
 	for cate, builder := range builderMap {
-		tmp := builder.Build()
-		setMap[cate] = &tmp
+		setMap[cate] = new(builder.Build())
 	}
 	dbInfoList.List = append(dbInfoList.List, loader.header)
 	return setMap, nil
@@ -552,8 +546,7 @@ func LoadPropertyMapWithJoin[T ~int](filename string, dbInfoList *DataHeaders, j
 	// build
 	setMap = map[T]*set.UniSet{}
 	for cate, builder := range builderMap {
-		tmp := builder.Build()
-		setMap[cate] = &tmp
+		setMap[cate] = new(builder.Build())
 	}
 	dbInfoList.List = append(dbInfoList.List, loader.header)
 	return propDef, setMap, nil

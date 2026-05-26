@@ -159,8 +159,7 @@ type UnionNode struct { // SET + SET
 
 func (u *UnionNode) Eval(context *EvalContext) set.UniSet {
 	leftSet := u.left.Eval(context)
-	rightSet := u.right.Eval(context)
-	leftSet.AddSet(&rightSet)
+	leftSet.AddSet(new(u.right.Eval(context)))
 	return leftSet
 }
 
@@ -171,8 +170,7 @@ type DiffNode struct { // SET - SET
 
 func (d *DiffNode) Eval(context *EvalContext) set.UniSet {
 	leftSet := d.left.Eval(context)
-	rightSet := d.right.Eval(context)
-	leftSet.RemoveSet(&rightSet)
+	leftSet.RemoveSet(new(d.right.Eval(context)))
 	return leftSet
 }
 
@@ -183,8 +181,7 @@ type IntersectNode struct { // SET * SET
 
 func (i *IntersectNode) Eval(context *EvalContext) set.UniSet {
 	leftSet := i.left.Eval(context)
-	rightSet := i.right.Eval(context)
-	newSet := leftSet.AndSet(&rightSet)
+	newSet := leftSet.AndSet(new(i.right.Eval(context)))
 	return newSet
 }
 
