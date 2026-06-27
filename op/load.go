@@ -123,7 +123,7 @@ func NewEvalContext(data *UnicodeData) (*EvalContext, error) {
 	if err != nil {
 		return nil, err
 	}
-	scriptXMap, err := LoadScriptXMap(data.ScriptExtensions, scriptDef, aliasMaps.Script(), &headers)
+	scriptXMap, err := LoadScriptXMap(data.ScriptExtensions, scriptDef, scriptMap, aliasMaps.Script(), &headers)
 	if err != nil {
 		return nil, err
 	}
@@ -478,8 +478,9 @@ func LoadScriptMap(filename string, aliasMap *AliasMap, dbInfoList *DataHeaders)
 	return scriptDef, setMap, nil
 }
 
-func LoadScriptXMap(filename string, def *ScriptDef, aliasMap *AliasMap, dbInfoList *DataHeaders) (setMap UniSetMap[Script], e error) {
+func LoadScriptXMap(filename string, def *ScriptDef, scriptSetMap UniSetMap[Script], aliasMap *AliasMap, dbInfoList *DataHeaders) (setMap UniSetMap[Script], e error) {
 	builderMap := map[Script]*set.UniSetBuilder{}
+	foundSetBuilder := set.UniSetBuilder{}
 
 	// load
 	loader, err := NewDataLoader(filename)
@@ -497,6 +498,7 @@ func LoadScriptXMap(filename string, def *ScriptDef, aliasMap *AliasMap, dbInfoL
 				builderMap[script] = &set.UniSetBuilder{}
 			}
 			builderMap[script].AddRange(runeRange)
+			foundSetBuilder.AddRange(runeRange)
 		}
 		return nil
 	})
@@ -505,9 +507,31 @@ func LoadScriptXMap(filename string, def *ScriptDef, aliasMap *AliasMap, dbInfoL
 	}
 
 	// build
+	common, err := def.Parse("Common", aliasMap)
+	if err != nil {
+		return nil, err
+	}
+	inherited, err := def.Parse("Inherited", aliasMap)
+	if err != nil {
+		return nil, err
+	}
+	foundSet := foundSetBuilder.Build()
 	setMap = map[Script]*set.UniSet{}
-	for cate, builder := range builderMap {
-		setMap[cate] = new(builder.Build())
+	for script, uniSet := range scriptSetMap {
+		builder := set.UniSetBuilder{}
+		if script == common || script == inherited {
+			for r := range uniSet.Iter {
+				if !foundSet.Find(r) {
+					builder.Add(r)
+				}
+			}
+		} else {
+			builder.AddSet(uniSet)
+			if r, ok := builderMap[script]; ok {
+				builder.AddSet(new(r.Build()))
+			}
+		}
+		setMap[script] = new(builder.Build())
 	}
 	dbInfoList.List = append(dbInfoList.List, loader.header)
 	return setMap, nil

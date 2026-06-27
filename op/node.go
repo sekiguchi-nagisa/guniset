@@ -97,6 +97,8 @@ func (e *ScriptNode) Eval(context *EvalContext) set.UniSet {
 		if e.extension {
 			if s, ok := context.ScriptXMap[property]; ok {
 				builder.AddSet(s)
+			} else if property == context.DefRecord.ScriptDef.Unknown() {
+				builder.AddSet(context.FillScriptUnknown())
 			}
 		} else {
 			if s, ok := context.ScriptMap[property]; ok {

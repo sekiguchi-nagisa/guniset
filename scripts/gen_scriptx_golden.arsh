@@ -41,5 +41,5 @@ for scx, values in $scx_map {
   for v in $values {
     echo "{ 0x${v.first}, 0x${v.last} },"
   } with > $output_dir/scx_${$scx.lower()}.golden
-  echo "scx:$scx" > $output_dir/scx_${$scx.lower()}.test
+  echo "scx:$scx - sc:$scx" > $output_dir/scx_${$scx.lower()}.test
 }
