@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/sekiguchi-nagisa/guniset/op"
 	"github.com/sekiguchi-nagisa/guniset/set"
@@ -201,6 +202,26 @@ func formatEmoji(def *op.PropertyDef[op.Emoji], emoji []op.Emoji) string {
 	return builder.String()
 }
 
+func toWTF8(r rune) []byte {
+	if r >= 0xD800 && r <= 0xDFFF { // surrogates
+		bytes := make([]byte, 3)
+		bytes[0] = byte(0xE0 | (r >> 12))
+		bytes[1] = byte(0x80 | ((r >> 6) & 0x3F))
+		bytes[2] = byte(0x80 | (r & 0x3F))
+		return bytes
+	}
+	return utf8.AppendRune(nil, r)
+}
+
+func formatAsEscapedUTF8(r rune) string {
+	sb := strings.Builder{}
+	bytes := toWTF8(r)
+	for _, b := range bytes {
+		sb.WriteString(fmt.Sprintf("\\x%02X", b))
+	}
+	return sb.String()
+}
+
 func (g *GUniSet) Query(asString bool) error {
 	var r rune
 	if asString {
@@ -274,6 +295,7 @@ func (g *GUniSet) Query(asString bool) error {
 		}
 	}
 	_, err = fmt.Fprintf(g.Writer, "CodePoint: U+%04X\n"+
+		"UTF-8: %s\n"+
 		"GeneralCategory: %s\n"+
 		"EastAsianWidth: %s\n"+
 		"Script: %s\n"+
@@ -282,6 +304,7 @@ func (g *GUniSet) Query(asString bool) error {
 		"GraphemeBreak: %s\n"+
 		"WordBreak: %s\n"+
 		"SentenceBreak: %s\n", r,
+		formatAsEscapedUTF8(r),
 		cat.Format(ctx.AliasMapRecord.Category()),
 		eaw.Format(ctx.AliasMapRecord.Eaw()),
 		ctx.DefRecord.ScriptDef.Format(sc, ctx.AliasMapRecord.Script()),
