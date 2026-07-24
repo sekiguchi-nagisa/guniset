@@ -3,7 +3,7 @@ module github.com/sekiguchi-nagisa/guniset
 go 1.26.3
 
 require (
-	github.com/alecthomas/kong v1.15.0
+	github.com/alecthomas/kong v1.16.0
 	github.com/stretchr/testify v1.11.1
 )
 
