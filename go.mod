@@ -3,12 +3,8 @@ module github.com/sekiguchi-nagisa/guniset
 go 1.26.3
 
 require (
-	github.com/alecthomas/kong v1.16.0
-	github.com/stretchr/testify v1.11.1
+	github.com/alecthomas/kong v1.16.1
+	github.com/stretchr/testify v1.12.0
 )
 
-require (
-	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/pmezard/go-difflib v1.0.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
-)
+require gopkg.in/yaml.v3 v3.0.1 // indirect
