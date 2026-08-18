@@ -185,7 +185,7 @@ func (u *UniSet) Find(r rune) bool {
 
 func (u *UniSet) Copy() UniSet {
 	copied := UniSet{}
-	copied.runes = u.runes[0:]
+	copied.runes = slices.Clone(u.runes)
 	return copied
 }
 

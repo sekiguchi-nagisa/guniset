@@ -292,6 +292,7 @@ func (g *GUniSet) Query(asString bool) error {
 	for s, uniSet := range ctx.SentenceBreakPropMap {
 		if uniSet.Find(r) {
 			sbp = ctx.DefRecord.SentenceBreakPropDef.Format(s)
+			break
 		}
 	}
 	_, err = fmt.Fprintf(g.Writer, "CodePoint: U+%04X\n"+
