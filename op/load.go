@@ -488,8 +488,8 @@ func LoadScriptXMap(filename string, def *ScriptDef, scriptSetMap UniSetMap[Scri
 		return nil, err
 	}
 	err = loader.LoadProperties(false, func(runeRange set.RuneRange, property string) error {
-		ss := strings.Split(property, " ")
-		for _, s := range ss {
+		ss := strings.SplitSeq(property, " ")
+		for s := range ss {
 			script, err := def.Parse(s, aliasMap)
 			if err != nil {
 				return err
@@ -645,7 +645,7 @@ func LoadStringPropertyMap(filename string, dbInfoList *DataHeaders, propertyMap
 			}
 		} else { //
 			var runes []rune
-			for _, c := range strings.Split(codes, " ") {
+			for c := range strings.SplitSeq(codes, " ") {
 				r, err := set.ParseRune(c)
 				if err != nil {
 					return err

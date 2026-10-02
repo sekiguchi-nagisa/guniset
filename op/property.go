@@ -17,12 +17,7 @@ var generalCategoryPrefixes = []string{
 }
 
 func IsGeneralCategoryPrefix(s string) bool {
-	for _, prefix := range generalCategoryPrefixes {
-		if s == prefix {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(generalCategoryPrefixes, s)
 }
 
 const (
@@ -138,12 +133,7 @@ var eastAsianWidthPrefixes = []string{
 }
 
 func IsEastAsianWidthPrefix(s string) bool {
-	for _, prefix := range eastAsianWidthPrefixes {
-		if s == prefix {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(eastAsianWidthPrefixes, s)
 }
 
 const (
