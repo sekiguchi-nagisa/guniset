@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode/utf16"
 	"unicode/utf8"
 
 	"github.com/sekiguchi-nagisa/guniset/op"
@@ -222,6 +223,15 @@ func formatAsEscapedUTF8(r rune) string {
 	return sb.String()
 }
 
+func formatAsEscapedUTF16(r rune) string {
+	sb := strings.Builder{}
+	u16 := utf16.Encode([]rune{r})
+	for _, r := range u16 {
+		sb.WriteString(fmt.Sprintf("\\u%04X", r))
+	}
+	return sb.String()
+}
+
 func (g *GUniSet) Query(asString bool) error {
 	var r rune
 	if asString {
@@ -297,6 +307,7 @@ func (g *GUniSet) Query(asString bool) error {
 	}
 	_, err = fmt.Fprintf(g.Writer, "CodePoint: U+%04X\n"+
 		"UTF-8: %s\n"+
+		"UTF-16: %s\n"+
 		"GeneralCategory: %s\n"+
 		"EastAsianWidth: %s\n"+
 		"Script: %s\n"+
@@ -306,6 +317,7 @@ func (g *GUniSet) Query(asString bool) error {
 		"WordBreak: %s\n"+
 		"SentenceBreak: %s\n", r,
 		formatAsEscapedUTF8(r),
+		formatAsEscapedUTF16(r),
 		cat.Format(ctx.AliasMapRecord.Category()),
 		eaw.Format(ctx.AliasMapRecord.Eaw()),
 		ctx.DefRecord.ScriptDef.Format(sc, ctx.AliasMapRecord.Script()),
