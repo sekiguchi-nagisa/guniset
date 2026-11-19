@@ -1,0 +1,11 @@
+CodePoint: U+24155
+UTF-8: \xF0\xA4\x85\x95
+UTF-16: \uD850\uDD55
+GeneralCategory: Lo, Other_Letter
+EastAsianWidth: W, Wide
+Script: Hani, Han
+ScriptExtension: [Hani]
+Emoji: []
+GraphemeBreak:
+WordBreak:
+SentenceBreak: OLetter

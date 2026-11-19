@@ -1,0 +1,11 @@
+CodePoint: U+00FF
+UTF-8: \xC3\xBF
+UTF-16: \u00FF
+GeneralCategory: Ll, Lowercase_Letter
+EastAsianWidth: N, Neutral
+Script: Latn, Latin
+ScriptExtension: [Latn]
+Emoji: []
+GraphemeBreak:
+WordBreak: ALetter
+SentenceBreak: Lower

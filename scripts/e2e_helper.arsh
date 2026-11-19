@@ -10,7 +10,7 @@ function run_e2e(targets: [String], func: (String, String)->String): Int {
         for test_case in @($target/*.test) {
             $count++
             let golden = $test_case.replace(".test", ".golden")
-            test -f $golden || { echo 1>&2 not founnd: $golden; exit 1; }
+            test -f $golden || { echo 1>&2 not found: $golden; exit 1; }
             let op = "$(cat $test_case)"
             echo - run: $test_case
             var ret = $func($op, $target)

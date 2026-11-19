@@ -1,0 +1,11 @@
+CodePoint: U+000D
+UTF-8: \x0D
+UTF-16: \u000D
+GeneralCategory: Cc, Control, cntrl
+EastAsianWidth: N, Neutral
+Script: Zyyy, Common
+ScriptExtension: [Zyyy]
+Emoji: []
+GraphemeBreak: CR
+WordBreak: CR
+SentenceBreak: CR

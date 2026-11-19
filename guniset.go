@@ -225,9 +225,12 @@ func formatAsEscapedUTF8(r rune) string {
 
 func formatAsEscapedUTF16(r rune) string {
 	sb := strings.Builder{}
-	u16 := utf16.Encode([]rune{r})
-	for _, r := range u16 {
+	if r >= 0xD800 && r <= 0xDFFF { // surrogates (utf16.Encode would replace them with U+FFFD)
 		sb.WriteString(fmt.Sprintf("\\u%04X", r))
+		return sb.String()
+	}
+	for _, u := range utf16.Encode([]rune{r}) {
+		sb.WriteString(fmt.Sprintf("\\u%04X", u))
 	}
 	return sb.String()
 }
@@ -289,19 +292,19 @@ func (g *GUniSet) Query(asString bool) error {
 	}
 	for s, uniSet := range ctx.GraphemeBreakPropMap {
 		if uniSet.Find(r) {
-			gbp = ctx.DefRecord.GraphemeBreakPropDef.Format(s)
+			gbp = " " + ctx.DefRecord.GraphemeBreakPropDef.Format(s)
 			break
 		}
 	}
 	for s, uniSet := range ctx.WordBreakPropMap {
 		if uniSet.Find(r) {
-			wbp = ctx.DefRecord.WordBreakPropDef.Format(s)
+			wbp = " " + ctx.DefRecord.WordBreakPropDef.Format(s)
 			break
 		}
 	}
 	for s, uniSet := range ctx.SentenceBreakPropMap {
 		if uniSet.Find(r) {
-			sbp = ctx.DefRecord.SentenceBreakPropDef.Format(s)
+			sbp = " " + ctx.DefRecord.SentenceBreakPropDef.Format(s)
 			break
 		}
 	}
@@ -313,9 +316,9 @@ func (g *GUniSet) Query(asString bool) error {
 		"Script: %s\n"+
 		"ScriptExtension: %s\n"+
 		"Emoji: %s\n"+
-		"GraphemeBreak: %s\n"+
-		"WordBreak: %s\n"+
-		"SentenceBreak: %s\n", r,
+		"GraphemeBreak:%s\n"+
+		"WordBreak:%s\n"+
+		"SentenceBreak:%s\n", r,
 		formatAsEscapedUTF8(r),
 		formatAsEscapedUTF16(r),
 		cat.Format(ctx.AliasMapRecord.Category()),

@@ -1,0 +1,11 @@
+CodePoint: U+DFFF
+UTF-8: \xED\xBF\xBF
+UTF-16: \uDFFF
+GeneralCategory: Cs, Surrogate
+EastAsianWidth: N, Neutral
+Script: Zzzz, Unknown
+ScriptExtension: []
+Emoji: []
+GraphemeBreak:
+WordBreak:
+SentenceBreak:

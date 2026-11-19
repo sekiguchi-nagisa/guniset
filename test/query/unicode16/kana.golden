@@ -1,0 +1,11 @@
+CodePoint: U+30A2
+UTF-8: \xE3\x82\xA2
+UTF-16: \u30A2
+GeneralCategory: Lo, Other_Letter
+EastAsianWidth: W, Wide
+Script: Kana, Katakana
+ScriptExtension: [Kana]
+Emoji: []
+GraphemeBreak:
+WordBreak: Katakana
+SentenceBreak: OLetter
